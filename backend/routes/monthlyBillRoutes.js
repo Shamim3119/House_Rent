@@ -6,7 +6,10 @@ const {
     getMonthlyBills,
     getMonthlyBillById,
     getMonthlyBillRegister,
+    generateMonthlyBillsForMonth,
     generateMonthlyBill,
+    adjustMonthlyBill,
+    getMonthlyBillAdjustments,
     updateMonthlyBill,
     deleteMonthlyBill
 } = require('../controllers/monthlyBillController');
@@ -56,6 +59,31 @@ router.get(
     getMonthlyBillById
 );
 
+
+// =====================================================
+// Generate all monthly bills for selected month
+// =====================================================
+
+router.post(
+    '/generate-month',
+    generateMonthlyBillsForMonth
+);
+
+
+// =====================================================
+// Adjust monthly bill
+// =====================================================
+
+router.put(
+    '/:id/adjust',
+    adjustMonthlyBill
+);
+
+
+router.get(
+    '/:id/adjustments',
+    getMonthlyBillAdjustments
+);
 
 // =====================================================
 // Generate monthly bill

@@ -1,704 +1,749 @@
-import { useEffect, useState } from 'react';
-import {
-    Search,
-    Eye,
-    Printer,
-    ReceiptText,
-} from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Search, Eye, Printer, ReceiptText } from "lucide-react";
 
-import api from '../api/axios';
-
+import api from "../api/axios";
 
 const MONTHS = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
 ];
 
-
 function MonthlyBills() {
+  // -------------------------------------------------
+  // Current date
+  // -------------------------------------------------
 
-    // -------------------------------------------------
-    // Current date
-    // -------------------------------------------------
+  const now = new Date();
 
-    const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
+  // -------------------------------------------------
+  // Filters
+  // -------------------------------------------------
 
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(currentMonth);
 
-    // -------------------------------------------------
-    // Filters
-    // -------------------------------------------------
+  // -------------------------------------------------
+  // Data
+  // -------------------------------------------------
 
-    const [year, setYear] = useState(currentYear);
-    const [month, setMonth] = useState(currentMonth);
+  const [bills, setBills] = useState([]);
 
+  const [loading, setLoading] = useState(false);
 
-    // -------------------------------------------------
-    // Data
-    // -------------------------------------------------
+  const [error, setError] = useState("");
 
-    const [bills, setBills] = useState([]);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [billDetail, setBillDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
 
-    const [loading, setLoading] = useState(false);
+  const [generatingBills, setGeneratingBills] = useState(false);
+  const [generationResult, setGenerationResult] = useState(null);
 
-    const [error, setError] = useState('');
+  // -------------------------------------------------
+  // Adjust bill modal
+  // -------------------------------------------------
 
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustBill, setAdjustBill] = useState(null);
+  const [adjustItems, setAdjustItems] = useState([]);
+  const [adjustReason, setAdjustReason] = useState("");
+  const [adjustmentHistory, setAdjustmentHistory] = useState([]);
+  const [adjustLoading, setAdjustLoading] = useState(false);
+  const [adjustSaving, setAdjustSaving] = useState(false);
+  const [adjustError, setAdjustError] = useState("");
 
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [billDetail, setBillDetail] = useState(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [detailError, setDetailError] = useState('');
+  // -------------------------------------------------
+  // Payment modal
+  // -------------------------------------------------
 
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
 
+  const [paymentHistory, setPaymentHistory] = useState([]);
 
-    // -------------------------------------------------
-// Payment modal
-// -------------------------------------------------
+  const [tenancyBalance, setTenancyBalance] = useState(null);
 
-const [paymentOpen, setPaymentOpen] = useState(false);
-const [selectedBill, setSelectedBill] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState("");
 
-const [paymentHistory, setPaymentHistory] = useState([]);
+  const [paymentForm, setPaymentForm] = useState({
+    payment_type: "add",
+    amount: "",
+    payment_date: "",
+    reference_no: "",
+    note: "",
+  });
 
-const [tenancyBalance, setTenancyBalance] = useState(null);
+  const [voidPaymentId, setVoidPaymentId] = useState(null);
+  const [voidSaving, setVoidSaving] = useState(false);
 
-const [paymentLoading, setPaymentLoading] = useState(false);
-const [paymentSaving, setPaymentSaving] = useState(false);
-const [paymentError, setPaymentError] = useState('');
-const [paymentSuccess, setPaymentSuccess] = useState('');
+  const [voidHistoryOpen, setVoidHistoryOpen] = useState(false);
+  const [voidHistory, setVoidHistory] = useState([]);
+  const [voidHistoryLoading, setVoidHistoryLoading] = useState(false);
+  const [voidHistoryError, setVoidHistoryError] = useState("");
 
-const [paymentForm, setPaymentForm] = useState({
-    payment_type: 'add',
-    amount: '',
-    payment_date: '',
-    reference_no: '',
-    note: '',
-});
+  // -------------------------------------------------
+  // Year options
+  // -------------------------------------------------
 
+  const years = [];
 
+  for (let value = currentYear - 5; value <= currentYear + 2; value++) {
+    years.push(value);
+  }
 
-const [voidPaymentId, setVoidPaymentId] = useState(null);
-const [voidSaving, setVoidSaving] = useState(false);
+  // -------------------------------------------------
+  // Load monthly bill register
+  // -------------------------------------------------
 
+  const loadBills = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    // -------------------------------------------------
-    // Year options
-    // -------------------------------------------------
+      const response = await api.get("/monthly-bills/register", {
+        params: {
+          year,
+          month,
+        },
+      });
 
-    const years = [];
+      setBills(response.data?.data || []);
+    } catch (err) {
+      console.error("Monthly bill register error:", err);
 
-    for (
-        let value = currentYear - 5;
-        value <= currentYear + 2;
-        value++
-    ) {
-        years.push(value);
+      setBills([]);
+
+      setError(err.response?.data?.message || "Failed to load monthly bills.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // -------------------------------------------------
+  // Initial load
+  // -------------------------------------------------
+
+  useEffect(() => {
+    loadBills();
+
+    // We intentionally load once initially.
+    // Search button applies later filter changes.
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // -------------------------------------------------
+  // Search
+  // -------------------------------------------------
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+
+    loadBills();
+  };
+
+  // -------------------------------------------------
+  // Money formatter
+  // -------------------------------------------------
+
+  const formatMoney = (amount) => {
+    return Number(amount || 0).toLocaleString("en-BD", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const escapeHtml = (value) => {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  const formatDateTime = (dateValue) => {
+    if (!dateValue) {
+      return "-";
     }
 
+    return new Date(dateValue).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
-    // -------------------------------------------------
-    // Load monthly bill register
-    // -------------------------------------------------
+  const getLocalDateTimeValue = () => {
+    const date = new Date();
 
-    const loadBills = async () => {
+    const offset = date.getTimezoneOffset();
 
-        try {
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
 
-            setLoading(true);
-            setError('');
+    return localDate.toISOString().slice(0, 16);
+  };
 
+  const getMaxPaymentDateTime = () => {
+    const date = new Date();
+    const offset = date.getTimezoneOffset();
 
-            const response = await api.get(
-                '/monthly-bills/register',
-                {
-                    params: {
-                        year,
-                        month,
-                    },
-                }
-            );
+    return new Date(date.getTime() - offset * 60 * 1000)
+      .toISOString()
+      .slice(0, 16);
+  };
 
+  // -------------------------------------------------
+  // Month name
+  // -------------------------------------------------
 
-            setBills(
-                response.data?.data || []
-            );
+  const getMonthName = (monthNumber) => {
+    const found = MONTHS.find((item) => item.value === Number(monthNumber));
 
+    return found?.label || "";
+  };
 
-        } catch (err) {
+  // -------------------------------------------------
+  // Total click
+  //
+  // Next step:
+  // This will open the bill-details popup.
+  // -------------------------------------------------
 
-            console.error(
-                'Monthly bill register error:',
-                err
-            );
+  const handleTotalClick = async (bill) => {
+    try {
+      setDetailOpen(true);
+      setBillDetail(null);
+      setDetailError("");
+      setDetailLoading(true);
 
+      const response = await api.get(`/monthly-bills/${bill.monthly_bill_id}`);
 
-            setBills([]);
+      setBillDetail(response.data?.data || null);
+    } catch (err) {
+      console.error("Monthly bill detail error:", err);
 
+      setDetailError(
+        err.response?.data?.message || "Failed to load bill details.",
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
-            setError(
-                err.response?.data?.message ||
-                'Failed to load monthly bills.'
-            );
+  // -------------------------------------------------
+  // Adjust monthly bill
+  // -------------------------------------------------
 
+  const handleAdjustClick = async (bill) => {
+    try {
+      setAdjustOpen(true);
 
-        } finally {
+      setAdjustBill(null);
 
-            setLoading(false);
+      setAdjustItems([]);
 
-        }
+      setAdjustReason("");
 
-    };
+      setAdjustmentHistory([]);
 
+      setAdjustError("");
 
-    // -------------------------------------------------
-    // Initial load
-    // -------------------------------------------------
+      setAdjustLoading(true);
 
-    useEffect(() => {
+      const [billResponse, historyResponse] = await Promise.all([
+        api.get(`/monthly-bills/${bill.monthly_bill_id}`),
 
-        loadBills();
+        api.get(`/monthly-bills/${bill.monthly_bill_id}/adjustments`),
+      ]);
 
-        // We intentionally load once initially.
-        // Search button applies later filter changes.
+      const detail = billResponse.data?.data;
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (!detail) {
+        throw new Error("Monthly bill details not found.");
+      }
 
-    }, []);
+      setAdjustBill(detail);
 
+      setAdjustItems(
+        (detail.items || []).map((item) => ({
+          id: item.id,
+          billing_item_id: item.billing_item_id,
+          name: item.name,
+          amount: String(item.amount),
+          original_amount: Number(item.amount),
+        })),
+      );
 
-    // -------------------------------------------------
-    // Search
-    // -------------------------------------------------
+      setAdjustmentHistory(historyResponse.data?.data || []);
+    } catch (err) {
+      console.error("Load bill adjustment error:", err);
 
-    const handleSearch = (event) => {
+      setAdjustError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load bill adjustment information.",
+      );
+    } finally {
+      setAdjustLoading(false);
+    }
+  };
 
-        event.preventDefault();
+  // -------------------------------------------------
+  // Change adjustment amount
+  // -------------------------------------------------
 
-        loadBills();
-
-    };
-
-
-    // -------------------------------------------------
-    // Money formatter
-    // -------------------------------------------------
-
-    const formatMoney = (amount) => {
-
-        return Number(amount || 0).toLocaleString(
-            'en-BD',
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
+  const handleAdjustAmountChange = (billingItemId, value) => {
+    setAdjustItems((currentItems) =>
+      currentItems.map((item) =>
+        item.billing_item_id === billingItemId
+          ? {
+              ...item,
+              amount: value,
             }
-        );
+          : item,
+      ),
+    );
+  };
 
-    };
+  // -------------------------------------------------
+  // Calculate adjusted total
+  // -------------------------------------------------
 
-    const escapeHtml = (value) => {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    };
+  const getAdjustedTotal = () => {
+    return adjustItems.reduce((total, item) => {
+      const amount = Number(item.amount);
 
-    const formatDateTime = (dateValue) => {
+      return total + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
+  };
 
-        if (!dateValue) {
-            return '-';
-        }
+  // -------------------------------------------------
+  // Close adjustment modal
+  // -------------------------------------------------
 
-        return new Date(dateValue).toLocaleString(
-            'en-GB',
-            {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            }
-        );
+  const closeAdjustModal = () => {
+    if (adjustSaving) {
+      return;
+    }
 
-    };
+    setAdjustOpen(false);
 
+    setAdjustBill(null);
 
-    const getLocalDateTimeValue = () => {
+    setAdjustItems([]);
 
-        const date = new Date();
+    setAdjustReason("");
 
-        const offset = date.getTimezoneOffset();
+    setAdjustmentHistory([]);
 
-        const localDate = new Date(
-            date.getTime() - offset * 60 * 1000
-        );
+    setAdjustError("");
+  };
 
-        return localDate
-            .toISOString()
-            .slice(0, 16);
+  // -------------------------------------------------
+  // Save bill adjustment
+  // -------------------------------------------------
 
-    };
+  const handleAdjustSave = async (event) => {
+    event.preventDefault();
 
+    if (!adjustBill) {
+      return;
+    }
 
-    const getMaxPaymentDateTime = () => {
+    if (!adjustReason.trim()) {
+      setAdjustError("Adjustment reason is required.");
 
-        const date = new Date();
-        const offset = date.getTimezoneOffset();
+      return;
+    }
 
-        return new Date(
-            date.getTime() - offset * 60 * 1000
-        )
-            .toISOString()
-            .slice(0, 16);
+    if (adjustReason.trim().length > 255) {
+      setAdjustError("Adjustment reason cannot exceed 255 characters.");
 
-    };
+      return;
+    }
 
-    // -------------------------------------------------
-    // Month name
-    // -------------------------------------------------
+    for (const item of adjustItems) {
+      if (
+        item.amount === "" ||
+        !Number.isFinite(Number(item.amount)) ||
+        Number(item.amount) < 0
+      ) {
+        setAdjustError(`Enter a valid amount for ${item.name}.`);
 
-    const getMonthName = (monthNumber) => {
+        return;
+      }
+    }
 
-        const found = MONTHS.find(
-            (item) =>
-                item.value === Number(monthNumber)
-        );
+    const hasChanges = adjustItems.some(
+      (item) => Number(item.amount) !== Number(item.original_amount),
+    );
 
-        return found?.label || '';
+    if (!hasChanges) {
+      setAdjustError("No bill item amounts were changed.");
 
-    };
+      return;
+    }
 
+    try {
+      setAdjustSaving(true);
 
-    // -------------------------------------------------
-    // Total click
-    //
-    // Next step:
-    // This will open the bill-details popup.
-    // -------------------------------------------------
+      setAdjustError("");
 
-    const handleTotalClick = async (bill) => {
+      const payload = {
+        reason: adjustReason.trim(),
 
-        try {
+        items: adjustItems.map((item) => ({
+          billing_item_id: item.billing_item_id,
 
-            setDetailOpen(true);
-            setBillDetail(null);
-            setDetailError('');
-            setDetailLoading(true);
+          amount: Number(item.amount),
+        })),
+      };
 
-            const response = await api.get(
-                `/monthly-bills/${bill.monthly_bill_id}`
-            );
+      await api.put(
+        `/monthly-bills/${adjustBill.monthly_bill_id}/adjust`,
+        payload,
+      );
+
+      // Reload selected monthly register.
+      await loadBills();
+
+      // Close modal after successful save.
+      setAdjustOpen(false);
+
+      setAdjustBill(null);
+
+      setAdjustItems([]);
+
+      setAdjustReason("");
+
+      setAdjustmentHistory([]);
+
+      setAdjustError("");
+    } catch (err) {
+      console.error("Adjust monthly bill error:", err);
+
+      setAdjustError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to adjust monthly bill.",
+      );
+    } finally {
+      setAdjustSaving(false);
+    }
+  };
+
+  const handleGenerateBills = async () => {
+    const confirmed = window.confirm(
+      `Generate monthly bills for ${getMonthName(month)} ${year}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setGeneratingBills(true);
+      setError("");
+      setGenerationResult(null);
+
+      const response = await api.post("/monthly-bills/generate-month", {
+        year: Number(year),
+        month: Number(month),
+      });
+
+      const result = response.data?.data;
+
+      if (!result) {
+        throw new Error("Invalid response from server.");
+      }
+
+      setGenerationResult(result);
+
+      // Reload register after generation
+      await loadBills();
+    } catch (err) {
+      console.error("Generate monthly bills error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to generate monthly bills.",
+      );
+    } finally {
+      setGeneratingBills(false);
+    }
+  };
+
+  // -------------------------------------------------
+  // Payment click
+  //
+  // Next step:
+  // This will open Add / Return popup.
+  // -------------------------------------------------
 
-            setBillDetail(
-                response.data?.data || null
-            );
+  const handlePaymentClick = async (bill) => {
+    setSelectedBill(bill);
+    setPaymentOpen(true);
 
-        } catch (err) {
+    setPaymentHistory([]);
+    setTenancyBalance(null);
 
-            console.error(
-                'Monthly bill detail error:',
-                err
-            );
+    setPaymentError("");
+    setPaymentSuccess("");
 
-            setDetailError(
-                err.response?.data?.message ||
-                'Failed to load bill details.'
-            );
+    setPaymentForm({
+      payment_type: "add",
+      amount: "",
+      payment_date: getLocalDateTimeValue(),
+      reference_no: "",
+      note: "",
+    });
 
-        } finally {
+    try {
+      setPaymentLoading(true);
 
-            setDetailLoading(false);
+      const [historyResponse, balanceResponse] = await Promise.all([
+        api.get(`/payments/tenancy/${bill.tenancy_id}`),
 
-        }
+        api.get(`/payments/tenancy/${bill.tenancy_id}/balance`),
+      ]);
 
-    };
+      setPaymentHistory(historyResponse.data?.data || []);
 
+      setTenancyBalance(balanceResponse.data?.data || null);
+    } catch (err) {
+      console.error("Payment information error:", err);
 
-    // -------------------------------------------------
-    // Payment click
-    //
-    // Next step:
-    // This will open Add / Return popup.
-    // -------------------------------------------------
+      setPaymentError(
+        err.response?.data?.message || "Failed to load payment information.",
+      );
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
-    const handlePaymentClick = async (bill) => {
+  const closePaymentModal = () => {
+    if (paymentSaving) {
+      return;
+    }
 
-        setSelectedBill(bill);
+    setPaymentOpen(false);
+    setSelectedBill(null);
+    setPaymentHistory([]);
+    setTenancyBalance(null);
+    setPaymentError("");
+    setPaymentSuccess("");
+  };
 
-        setPaymentOpen(true);
+  const handlePaymentFormChange = (event) => {
+    const { name, value } = event.target;
 
-        setPaymentHistory([]);
+    setPaymentForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
 
-        setPaymentError('');
-        setPaymentSuccess('');
+  const handlePaymentSave = async (event) => {
+    event.preventDefault();
 
-        setPaymentForm({
-            payment_type: 'add',
-            amount: '',
-            payment_date: getLocalDateTimeValue(),
-            reference_no: '',
-            note: '',
-        });
+    if (!selectedBill) {
+      return;
+    }
 
+    const amount = Number(paymentForm.amount);
 
-        try {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentError("Payment amount must be greater than zero.");
 
-            setPaymentLoading(true);
+      return;
+    }
 
-            const response = await api.get(
-                `/payments/tenancy/${bill.tenancy_id}`
-            );
+    if (!paymentForm.payment_date) {
+      setPaymentError("Payment date is required.");
 
-            setPaymentHistory(
-                response.data?.data || []
-            );
+      return;
+    }
 
-        } catch (err) {
+    const selectedPaymentDate = new Date(paymentForm.payment_date);
 
-            console.error(
-                'Payment history error:',
-                err
-            );
+    const currentDate = new Date();
 
-            setPaymentError(
-                err.response?.data?.message ||
-                'Failed to load payment history.'
-            );
+    if (selectedPaymentDate > currentDate) {
+      setPaymentError(
+        "Payment date cannot be greater than the current date and time.",
+      );
 
-        } finally {
+      return;
+    }
 
-            setPaymentLoading(false);
+    try {
+      setPaymentSaving(true);
 
-        }
+      setPaymentError("");
+      setPaymentSuccess("");
 
-    };
+      const payload = {
+        tenancy_id: selectedBill.tenancy_id,
 
+        payment_type: paymentForm.payment_type,
 
-    const closePaymentModal = () => {
+        amount,
 
-        if (paymentSaving) {
-            return;
-        }
+        payment_date: paymentForm.payment_date.replace("T", " ") + ":00",
 
-        setPaymentOpen(false);
-        setSelectedBill(null);
-        setPaymentHistory([]);
-        setPaymentError('');
-        setPaymentSuccess('');
+        reference_no: paymentForm.reference_no,
 
-    };
+        note: paymentForm.note,
+      };
 
-    const handlePaymentFormChange = (event) => {
+      const response = await api.post("/payments", payload);
 
-        const {
-            name,
-            value
-        } = event.target;
+      setPaymentSuccess(
+        response.data?.message || "Payment saved successfully.",
+      );
 
-        setPaymentForm((current) => ({
-            ...current,
-            [name]: value,
-        }));
+      // Reload payment history
 
-    };
+      // -------------------------------------------------
+      // Reload payment history and tenancy balance
+      // -------------------------------------------------
 
+      const [historyResponse, balanceResponse] = await Promise.all([
+        api.get(`/payments/tenancy/${selectedBill.tenancy_id}`),
 
-    const handlePaymentSave = async (event) => {
+        api.get(`/payments/tenancy/${selectedBill.tenancy_id}/balance`),
+      ]);
 
-        event.preventDefault();
+      setPaymentHistory(historyResponse.data?.data || []);
 
-        if (!selectedBill) {
-            return;
-        }
+      setTenancyBalance(balanceResponse.data?.data || null);
 
+      // Clear only amount/reference/note.
+      // Keep type/date for convenience.
 
-        const amount = Number(
-            paymentForm.amount
-        );
+      setPaymentForm((current) => ({
+        ...current,
+        amount: "",
+        reference_no: "",
+        note: "",
+      }));
 
+      // Refresh monthly bill register
 
-        if (
-            !Number.isFinite(amount) ||
-            amount <= 0
-        ) {
+      await loadBills();
+    } catch (err) {
+      console.error("Save payment error:", err);
 
-            setPaymentError(
-                'Payment amount must be greater than zero.'
-            );
+      setPaymentError(err.response?.data?.message || "Failed to save payment.");
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
 
-            return;
+  const handleVoidPayment = async (payment) => {
+    if (payment.is_void) {
+      return;
+    }
 
-        }
+    const reason = window.prompt("Enter the reason for voiding this payment:");
 
+    if (reason === null) {
+      return;
+    }
 
-        if (!paymentForm.payment_date) {
+    if (!reason.trim()) {
+      setPaymentError("Void reason is required.");
+      return;
+    }
 
-            setPaymentError(
-                'Payment date is required.'
-            );
+    try {
+      setVoidPaymentId(payment.id);
+      setVoidSaving(true);
 
-            return;
+      setPaymentError("");
+      setPaymentSuccess("");
 
-        }
+      const response = await api.put(`/payments/${payment.id}/void`, {
+        void_reason: reason.trim(),
+      });
 
-        const selectedPaymentDate =
-            new Date(paymentForm.payment_date);
+      setPaymentSuccess(
+        response.data?.message || "Payment voided successfully.",
+      );
 
-        const currentDate =
-            new Date();
+      // Reload history and overall ledger
+      const [historyResponse, balanceResponse] = await Promise.all([
+        api.get(`/payments/tenancy/${selectedBill.tenancy_id}`),
 
-        if (selectedPaymentDate > currentDate) {
+        api.get(`/payments/tenancy/${selectedBill.tenancy_id}/balance`),
+      ]);
 
-            setPaymentError(
-                'Payment date cannot be greater than the current date and time.'
-            );
+      setPaymentHistory(historyResponse.data?.data || []);
 
-            return;
+      setTenancyBalance(balanceResponse.data?.data || null);
 
-        }
+      // Refresh selected month register
+      await loadBills();
+    } catch (err) {
+      console.error("Void payment error:", err);
 
+      setPaymentError(err.response?.data?.message || "Failed to void payment.");
+    } finally {
+      setVoidPaymentId(null);
+      setVoidSaving(false);
+    }
+  };
 
-        try {
+  // -------------------------------------------------
+  // Individual print
+  //
+  // We'll implement after the popup.
+  // -------------------------------------------------
 
-            setPaymentSaving(true);
+  const handlePrint = async (bill) => {
+    try {
+      setError("");
 
-            setPaymentError('');
-            setPaymentSuccess('');
+      const response = await api.get(`/monthly-bills/${bill.monthly_bill_id}`);
 
+      const detail = response.data?.data;
 
-            const payload = {
+      if (!detail) {
+        throw new Error("Bill data not found.");
+      }
 
-                tenancy_id:
-                    selectedBill.tenancy_id,
+      const printWindow = window.open("", "_blank", "width=850,height=900");
 
-                payment_type:
-                    paymentForm.payment_type,
+      if (!printWindow) {
+        setError("Print window was blocked. Please allow pop-ups.");
+        return;
+      }
 
-                amount,
-
-                payment_date:
-                    paymentForm.payment_date
-                        .replace('T', ' ') + ':00',
-
-                reference_no:
-                    paymentForm.reference_no,
-
-                note:
-                    paymentForm.note,
-
-            };
-
-
-            const response = await api.post(
-                '/payments',
-                payload
-            );
-
-
-            setPaymentSuccess(
-                response.data?.message ||
-                'Payment saved successfully.'
-            );
-
-
-            // Reload payment history
-
-            const historyResponse =
-                await api.get(
-                    `/payments/tenancy/${selectedBill.tenancy_id}`
-                );
-
-
-            setPaymentHistory(
-                historyResponse.data?.data || []
-            );
-
-
-            // Clear only amount/reference/note.
-            // Keep type/date for convenience.
-
-            setPaymentForm((current) => ({
-                ...current,
-                amount: '',
-                reference_no: '',
-                note: '',
-            }));
-
-
-            // Refresh monthly bill register
-
-            await loadBills();
-
-
-        } catch (err) {
-
-            console.error(
-                'Save payment error:',
-                err
-            );
-
-            setPaymentError(
-                err.response?.data?.message ||
-                'Failed to save payment.'
-            );
-
-        } finally {
-
-            setPaymentSaving(false);
-
-        }
-
-    };
-
-
-    const handleVoidPayment = async (payment) => {
-
-        if (payment.is_void) {
-            return;
-        }
-
-        const reason = window.prompt(
-            'Enter the reason for voiding this payment:'
-        );
-
-        if (reason === null) {
-            return;
-        }
-
-        if (!reason.trim()) {
-            setPaymentError('Void reason is required.');
-            return;
-        }
-
-
-        try {
-
-            setVoidPaymentId(payment.id);
-            setVoidSaving(true);
-
-            setPaymentError('');
-            setPaymentSuccess('');
-
-
-            const response = await api.put(
-                `/payments/${payment.id}/void`,
-                {
-                    void_reason: reason.trim(),
-                }
-            );
-
-
-            setPaymentSuccess(
-                response.data?.message ||
-                'Payment voided successfully.'
-            );
-
-
-            // Reload history and overall ledger
-            const [
-                historyResponse,
-                balanceResponse,
-            ] = await Promise.all([
-
-                api.get(
-                    `/payments/tenancy/${selectedBill.tenancy_id}`
-                ),
-
-                api.get(
-                    `/payments/tenancy/${selectedBill.tenancy_id}/balance`
-                ),
-
-            ]);
-
-
-            setPaymentHistory(
-                historyResponse.data?.data || []
-            );
-
-
-            setTenancyBalance(
-                balanceResponse.data?.data || null
-            );
-
-
-            // Refresh selected month register
-            await loadBills();
-
-
-        } catch (err) {
-
-            console.error(
-                'Void payment error:',
-                err
-            );
-
-            setPaymentError(
-                err.response?.data?.message ||
-                'Failed to void payment.'
-            );
-
-
-        } finally {
-
-            setVoidPaymentId(null);
-            setVoidSaving(false);
-
-        }
-
-    };
-
-    // -------------------------------------------------
-    // Individual print
-    //
-    // We'll implement after the popup.
-    // -------------------------------------------------
-
-    const handlePrint = async (bill) => {
-
-        try {
-
-            setError('');
-
-            const response = await api.get(
-                `/monthly-bills/${bill.monthly_bill_id}`
-            );
-
-            const detail = response.data?.data;
-
-            if (!detail) {
-                throw new Error('Bill data not found.');
-            }
-
-            const printWindow = window.open(
-                '',
-                '_blank',
-                'width=850,height=900'
-            );
-
-            if (!printWindow) {
-                setError(
-                    'Print window was blocked. Please allow pop-ups.'
-                );
-                return;
-            }
-
-
-            const chargeRows = (detail.items || [])
-                .map((item) => `
+      const chargeRows = (detail.items || [])
+        .map(
+          (item) => `
                     <tr>
                         <td>${escapeHtml(item.name)}</td>
 
@@ -706,28 +751,19 @@ const [voidSaving, setVoidSaving] = useState(false);
                             ${formatMoney(item.amount)}
                         </td>
                     </tr>
-                `)
-                .join('');
+                `,
+        )
+        .join("");
 
+      let balanceText = "Settled";
 
-            let balanceText = 'Settled';
+      if (detail.balance_type === "due") {
+        balanceText = `Due ${formatMoney(detail.balance_amount)}`;
+      } else if (detail.balance_type === "advance") {
+        balanceText = `Advance ${formatMoney(detail.balance_amount)}`;
+      }
 
-            if (detail.balance_type === 'due') {
-
-                balanceText =
-                    `Due ${formatMoney(detail.balance_amount)}`;
-
-            } else if (
-                detail.balance_type === 'advance'
-            ) {
-
-                balanceText =
-                    `Advance ${formatMoney(detail.balance_amount)}`;
-
-            }
-
-
-            const html = `
+      const html = `
     <!DOCTYPE html>
 
     <html>
@@ -941,9 +977,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                         </td>
 
                         <td>
-                            ${escapeHtml(
-                                detail.property_unit?.name
-                            )}
+                            ${escapeHtml(detail.property_unit?.name)}
                         </td>
 
                         <td class="label">
@@ -1014,9 +1048,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                         </td>
 
                         <td class="summary-value">
-                            ${formatMoney(
-                                detail.previous_balance
-                            )}
+                            ${formatMoney(detail.previous_balance)}
                         </td>
 
                     </tr>
@@ -1029,9 +1061,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                         </td>
 
                         <td class="summary-value">
-                            ${formatMoney(
-                                detail.total_amount
-                            )}
+                            ${formatMoney(detail.total_amount)}
                         </td>
 
                     </tr>
@@ -1044,9 +1074,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                         </td>
 
                         <td class="summary-value">
-                            ${formatMoney(
-                                detail.month_payment
-                            )}
+                            ${formatMoney(detail.month_payment)}
                         </td>
 
                     </tr>
@@ -1086,76 +1114,81 @@ const [voidSaving, setVoidSaving] = useState(false);
     </html>
             `;
 
+      printWindow.document.open();
 
-            printWindow.document.open();
+      printWindow.document.write(html);
 
-            printWindow.document.write(html);
+      printWindow.document.close();
 
-            printWindow.document.close();
+      printWindow.focus();
+    } catch (err) {
+      console.error("Print bill error:", err);
 
-            printWindow.focus();
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to prepare bill for printing.",
+      );
+    }
+  };
 
+  const handleOpenVoidHistory = async () => {
+    setVoidHistoryOpen(true);
+    setVoidHistory([]);
+    setVoidHistoryError("");
+    setVoidHistoryLoading(true);
 
-        } catch (err) {
+    try {
+      const response = await api.get("/payments/void-history");
 
-            console.error(
-                'Print bill error:',
-                err
-            );
+      setVoidHistory(response.data?.data || []);
+    } catch (err) {
+      console.error("Void history error:", err);
 
-            setError(
-                err.response?.data?.message ||
-                err.message ||
-                'Failed to prepare bill for printing.'
-            );
+      setVoidHistoryError(
+        err.response?.data?.message || "Failed to load payment void history.",
+      );
+    } finally {
+      setVoidHistoryLoading(false);
+    }
+  };
 
-        }
+  const handleCloseVoidHistory = () => {
+    setVoidHistoryOpen(false);
+    setVoidHistory([]);
+    setVoidHistoryError("");
+  };
 
-    }; 
+  // -------------------------------------------------
+  // Preview all
+  //
+  // We'll implement after individual print.
+  // -------------------------------------------------
 
+  const handlePreviewAll = async () => {
+    try {
+      setError("");
 
-    // -------------------------------------------------
-    // Preview all
-    //
-    // We'll implement after individual print.
-    // -------------------------------------------------
+      if (bills.length === 0) {
+        setError("No bills found to preview.");
+        return;
+      }
 
-    const handlePreviewAll = async () => {
+      // ---------------------------------------------
+      // Open window immediately.
+      // This helps avoid browser popup blocking
+      // while we wait for API requests.
+      // ---------------------------------------------
 
-        try {
+      const previewWindow = window.open("", "_blank", "width=1000,height=900");
 
-            setError('');
+      if (!previewWindow) {
+        setError("Preview window was blocked. Please allow pop-ups.");
 
-            if (bills.length === 0) {
-                setError('No bills found to preview.');
-                return;
-            }
+        return;
+      }
 
-
-            // ---------------------------------------------
-            // Open window immediately.
-            // This helps avoid browser popup blocking
-            // while we wait for API requests.
-            // ---------------------------------------------
-
-            const previewWindow = window.open(
-                '',
-                '_blank',
-                'width=1000,height=900'
-            );
-
-
-            if (!previewWindow) {
-
-                setError(
-                    'Preview window was blocked. Please allow pop-ups.'
-                );
-
-                return;
-            }
-
-
-            previewWindow.document.write(`
+      previewWindow.document.write(`
                 <!DOCTYPE html>
 
                 <html>
@@ -1176,121 +1209,78 @@ const [voidSaving, setVoidSaving] = useState(false);
                 </html>
             `);
 
-            previewWindow.document.close();
+      previewWindow.document.close();
 
+      // ---------------------------------------------
+      // Load complete details for every bill
+      // ---------------------------------------------
 
-            // ---------------------------------------------
-            // Load complete details for every bill
-            // ---------------------------------------------
+      const responses = await Promise.all(
+        bills.map((bill) => api.get(`/monthly-bills/${bill.monthly_bill_id}`)),
+      );
 
-            const responses = await Promise.all(
+      const billDetails = responses
+        .map((response) => response.data?.data)
+        .filter(Boolean);
 
-                bills.map((bill) =>
-                    api.get(
-                        `/monthly-bills/${bill.monthly_bill_id}`
-                    )
-                )
+      if (billDetails.length === 0) {
+        previewWindow.close();
 
-            );
+        setError("No bill information could be loaded.");
 
+        return;
+      }
 
-            const billDetails = responses
-                .map(
-                    (response) =>
-                        response.data?.data
-                )
-                .filter(Boolean);
+      // ---------------------------------------------
+      // Create each bill
+      // ---------------------------------------------
 
-
-            if (billDetails.length === 0) {
-
-                previewWindow.close();
-
-                setError(
-                    'No bill information could be loaded.'
-                );
-
-                return;
-            }
-
-
-            // ---------------------------------------------
-            // Create each bill
-            // ---------------------------------------------
-
-            const billSections = billDetails
-                .map((detail, index) => {
-
-
-                    const chargeRows =
-                        (detail.items || [])
-                            .map((item) => `
+      const billSections = billDetails
+        .map((detail, index) => {
+          const chargeRows = (detail.items || [])
+            .map(
+              (item) => `
                                 <tr>
 
                                     <td>
-                                        ${escapeHtml(
-                                            item.name
-                                        )}
+                                        ${escapeHtml(item.name)}
                                     </td>
 
                                     <td class="amount">
-                                        ${formatMoney(
-                                            item.amount
-                                        )}
+                                        ${formatMoney(item.amount)}
                                     </td>
 
                                 </tr>
-                            `)
-                            .join('');
+                            `,
+            )
+            .join("");
 
+          let balanceText = "Settled";
 
-                    let balanceText = 'Settled';
+          let balanceClass = "settled";
 
-                    let balanceClass = 'settled';
+          if (detail.balance_type === "due") {
+            balanceText = `Due ${formatMoney(detail.balance_amount)}`;
 
+            balanceClass = "due";
+          } else if (detail.balance_type === "advance") {
+            balanceText = `Advance ${formatMoney(detail.balance_amount)}`;
 
-                    if (
-                        detail.balance_type === 'due'
-                    ) {
+            balanceClass = "advance";
+          }
 
-                        balanceText =
-                            `Due ${formatMoney(
-                                detail.balance_amount
-                            )}`;
-
-                        balanceClass = 'due';
-
-                    } else if (
-                        detail.balance_type === 'advance'
-                    ) {
-
-                        balanceText =
-                            `Advance ${formatMoney(
-                                detail.balance_amount
-                            )}`;
-
-                        balanceClass = 'advance';
-
-                    }
-
-
-                    return `
+          return `
 
                         <section
                             class="bill-page ${
-                                index <
-                                billDetails.length - 1
-                                    ? 'page-break'
-                                    : ''
+                              index < billDetails.length - 1 ? "page-break" : ""
                             }"
                         >
 
                             <div class="bill-header">
 
                                 <h1>
-                                    ${escapeHtml(
-                                        detail.house?.name
-                                    )}
+                                    ${escapeHtml(detail.house?.name)}
                                 </h1>
 
                                 <h2>
@@ -1298,9 +1288,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                 </h2>
 
                                 <p>
-                                    ${escapeHtml(
-                                        detail.house?.address
-                                    )}
+                                    ${escapeHtml(detail.house?.address)}
                                 </p>
 
                             </div>
@@ -1315,9 +1303,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td>
-                                        ${escapeHtml(
-                                            detail.tenant?.name
-                                        )}
+                                        ${escapeHtml(detail.tenant?.name)}
                                     </td>
 
 
@@ -1326,9 +1312,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td>
-                                        ${escapeHtml(
-                                            detail.billing_month
-                                        )}
+                                        ${escapeHtml(detail.billing_month)}
                                     </td>
 
                                 </tr>
@@ -1342,9 +1326,7 @@ const [voidSaving, setVoidSaving] = useState(false);
 
                                     <td>
                                         ${escapeHtml(
-                                            detail
-                                                .property_unit
-                                                ?.name
+                                          detail.property_unit?.name,
                                         )}
                                     </td>
 
@@ -1354,9 +1336,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td>
-                                        ${escapeHtml(
-                                            detail.due_date
-                                        )}
+                                        ${escapeHtml(detail.due_date)}
                                     </td>
 
                                 </tr>
@@ -1369,9 +1349,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td>
-                                        ${escapeHtml(
-                                            detail.tenant?.phone
-                                        )}
+                                        ${escapeHtml(detail.tenant?.phone)}
                                     </td>
 
 
@@ -1380,9 +1358,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td>
-                                        ${escapeHtml(
-                                            detail.house?.name
-                                        )}
+                                        ${escapeHtml(detail.house?.name)}
                                     </td>
 
                                 </tr>
@@ -1427,9 +1403,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td class="summary-value">
-                                        ${formatMoney(
-                                            detail.previous_balance
-                                        )}
+                                        ${formatMoney(detail.previous_balance)}
                                     </td>
 
                                 </tr>
@@ -1442,9 +1416,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td class="summary-value">
-                                        ${formatMoney(
-                                            detail.total_amount
-                                        )}
+                                        ${formatMoney(detail.total_amount)}
                                     </td>
 
                                 </tr>
@@ -1457,9 +1429,7 @@ const [voidSaving, setVoidSaving] = useState(false);
                                     </td>
 
                                     <td class="summary-value">
-                                        ${formatMoney(
-                                            detail.month_payment
-                                        )}
+                                        ${formatMoney(detail.month_payment)}
                                     </td>
 
                                 </tr>
@@ -1497,16 +1467,14 @@ const [voidSaving, setVoidSaving] = useState(false);
                         </section>
 
                     `;
+        })
+        .join("");
 
-                })
-                .join('');
+      // ---------------------------------------------
+      // Complete preview document
+      // ---------------------------------------------
 
-
-            // ---------------------------------------------
-            // Complete preview document
-            // ---------------------------------------------
-
-            const html = `
+      const html = `
 
                 <!DOCTYPE html>
 
@@ -1518,9 +1486,7 @@ const [voidSaving, setVoidSaving] = useState(false);
 
                     <title>
                         Monthly Bills -
-                        ${escapeHtml(
-                            getMonthName(month)
-                        )}
+                        ${escapeHtml(getMonthName(month))}
                         ${year}
                     </title>
 
@@ -1750,1332 +1716,1220 @@ const [voidSaving, setVoidSaving] = useState(false);
                 </html>
             `;
 
+      previewWindow.document.open();
 
-            previewWindow.document.open();
+      previewWindow.document.write(html);
 
-            previewWindow.document.write(html);
+      previewWindow.document.close();
 
-            previewWindow.document.close();
+      previewWindow.focus();
+    } catch (err) {
+      console.error("Preview all bills error:", err);
 
-            previewWindow.focus();
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to prepare monthly bill preview.",
+      );
+    }
+  };
 
+  const closeDetailModal = () => {
+    setDetailOpen(false);
+    setBillDetail(null);
+    setDetailError("");
+  };
 
-        } catch (err) {
-
-            console.error(
-                'Preview all bills error:',
-                err
-            );
-
-
-            setError(
-                err.response?.data?.message ||
-                err.message ||
-                'Failed to prepare monthly bill preview.'
-            );
-
-        }
-
-    };
-
-
-    const closeDetailModal = () => {
-        setDetailOpen(false);
-        setBillDetail(null);
-        setDetailError('');
-    };
-
-
-    return (
-
-        <div className="page-container">
-
-
-            {/* =========================================
+  return (
+    <div className="page-container">
+      {/* =========================================
                 PAGE HEADER
             ========================================= */}
 
-            <div className="page-header">
+      <div className="page-header">
+        <div>
+          <h1>Monthly Bills</h1>
 
-                <div>
+          <p>View monthly bills, payments and tenant balances.</p>
+        </div>
+      </div>
 
-                    <h1>Monthly Bills</h1>
-
-                    <p>
-                        View monthly bills, payments
-                        and tenant balances.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            {/* =========================================
+      {/* =========================================
                 FILTER CARD
             ========================================= */}
 
-            <div className="card">
+      <div className="card">
+        <form onSubmit={handleSearch} className="bill-filter-row">
+          <div className="form-group">
+            <label>Year</label>
 
-                <form
-                    onSubmit={handleSearch}
-                    className="bill-filter-row"
-                >
+            <select
+              value={year}
+              onChange={(event) => setYear(Number(event.target.value))}
+            >
+              {years.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                    <div className="form-group">
+          <div className="form-group">
+            <label>Month</label>
 
-                        <label>Year</label>
+            <select
+              value={month}
+              onChange={(event) => setMonth(Number(event.target.value))}
+            >
+              {MONTHS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                        <select
-                            value={year}
-                            onChange={(event) =>
-                                setYear(
-                                    Number(
-                                        event.target.value
-                                    )
-                                )
-                            }
-                        >
+          <div className="bill-filter-actions">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              <Search size={17} />
 
-                            {years.map((item) => (
+              {loading ? "Loading..." : "Search"}
+            </button>
 
-                                <option
-                                    key={item}
-                                    value={item}
-                                >
-                                    {item}
-                                </option>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleGenerateBills}
+              disabled={generatingBills}
+            >
+              {generatingBills ? "Generating..." : "Generate Bills"}
+            </button>
 
-                            ))}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handlePreviewAll}
+              disabled={loading || bills.length === 0}
+            >
+              <Eye size={17} />
+              Preview All
+            </button>
 
-                        </select>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleOpenVoidHistory}
+            >
+              <ReceiptText size={17} />
+              Void History
+            </button>
+          </div>
 
-                    </div>
+          {generationResult && (
+            <div className="bill-generation-result">
+              <strong>Bill generation completed.</strong>
 
+              <span>Eligible: {generationResult.eligible}</span>
 
-                    <div className="form-group">
+              <span>Generated: {generationResult.generated}</span>
 
-                        <label>Month</label>
+              <span>Skipped: {generationResult.skipped}</span>
 
-                        <select
-                            value={month}
-                            onChange={(event) =>
-                                setMonth(
-                                    Number(
-                                        event.target.value
-                                    )
-                                )
-                            }
-                        >
-
-                            {MONTHS.map((item) => (
-
-                                <option
-                                    key={item.value}
-                                    value={item.value}
-                                >
-                                    {item.label}
-                                </option>
-
-                            ))}
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="bill-filter-actions">
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading}
-                        >
-
-                            <Search size={17} />
-
-                            {loading
-                                ? 'Loading...'
-                                : 'Search'
-                            }
-
-                        </button>
-
-
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={handlePreviewAll}
-                            disabled={
-                                loading ||
-                                bills.length === 0
-                            }
-                        >
-
-                            <Eye size={17} />
-
-                            Preview All
-
-                        </button>
-
-                    </div>
-
-                </form>
-
+              <span>Failed: {generationResult.failed}</span>
             </div>
+          )}
+        </form>
+      </div>
 
-
-            {/* =========================================
+      {/* =========================================
                 ERROR
             ========================================= */}
 
-            {error && (
+      {error && <div className="alert alert-danger">{error}</div>}
 
-                <div className="alert alert-danger">
-                    {error}
-                </div>
-
-            )}
-
-
-            {/* =========================================
+      {/* =========================================
                 REGISTER
             ========================================= */}
 
-            <div className="card bill-register-card">
-
-                <div className="card-header">
-
-                    <div>
-
-                        <h2>
-                            {getMonthName(month)} {year}
-                        </h2>
-
-                        <p>
-                            Monthly bill register
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div className="table-responsive">
-
-                    <table className="data-table bill-register-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>Year</th>
-
-                                <th>Month</th>
-
-                                <th>House</th>
-
-                                <th>Tenant</th>
-
-                                <th>Unit</th>
-
-                                <th className="text-right">
-                                    Total
-                                </th>
-
-                                <th className="text-right">
-                                    Payment
-                                </th>
-
-                                <th className="text-right">
-                                    Due / Advance
-                                </th>
-
-                                <th className="text-center">
-                                    Print
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            {loading ? (
-
-                                <tr>
-
-                                    <td
-                                        colSpan="9"
-                                        className="text-center"
-                                    >
-                                        Loading monthly bills...
-                                    </td>
-
-                                </tr>
-
-                            ) : bills.length === 0 ? (
-
-                                <tr>
-
-                                    <td
-                                        colSpan="9"
-                                        className="text-center"
-                                    >
-                                        No monthly bills found
-                                        for this month.
-                                    </td>
-
-                                </tr>
-
-                            ) : (
-
-                                bills.map((bill) => (
-
-                                    <tr
-                                        key={
-                                            bill.monthly_bill_id
-                                        }
-                                    >
-
-                                        <td>
-                                            {year}
-                                        </td>
-
-
-                                        <td>
-                                            {getMonthName(month)}
-                                        </td>
-
-
-                                        <td>
-                                            {bill.house_name}
-                                        </td>
-
-
-                                        <td>
-
-                                            <strong>
-                                                {bill.tenant_name}
-                                            </strong>
-
-                                            {bill.tenant_phone && (
-
-                                                <div
-                                                    className="table-subtext"
-                                                >
-                                                    {
-                                                        bill.tenant_phone
-                                                    }
-                                                </div>
-
-                                            )}
-
-                                        </td>
-
-
-                                        <td>
-                                            {
-                                                bill.property_unit_name
-                                            }
-                                        </td>
-
-
-                                        {/* TOTAL */}
-
-                                        <td className="text-right">
-
-                                            <button
-                                                type="button"
-                                                className="table-link"
-                                                onClick={() =>
-                                                    handleTotalClick(
-                                                        bill
-                                                    )
-                                                }
-                                            >
-
-                                                {formatMoney(
-                                                    bill.total_amount
-                                                )}
-
-                                            </button>
-
-                                        </td>
-
-
-                                        {/* PAYMENT */}
-
-                                        <td className="text-right">
-
-                                            <button
-                                                type="button"
-                                                className="table-link"
-                                                onClick={() =>
-                                                    handlePaymentClick(
-                                                        bill
-                                                    )
-                                                }
-                                            >
-
-                                                {formatMoney(
-                                                    bill.month_payment
-                                                )}
-
-                                            </button>
-
-                                        </td>
-
-
-                                        {/* DUE / ADVANCE */}
-
-                                        <td className="text-right">
-
-                                            {bill.balance_type ===
-                                                'due' && (
-
-                                                <span className="balance-due">
-
-                                                    Due&nbsp;
-                                                    {formatMoney(
-                                                        bill.balance_amount
-                                                    )}
-
-                                                </span>
-
-                                            )}
-
-
-                                            {bill.balance_type ===
-                                                'advance' && (
-
-                                                <span className="balance-advance">
-
-                                                    Advance&nbsp;
-                                                    {formatMoney(
-                                                        bill.balance_amount
-                                                    )}
-
-                                                </span>
-
-                                            )}
-
-
-                                            {bill.balance_type ===
-                                                'settled' && (
-
-                                                <span className="balance-settled">
-
-                                                    Settled
-
-                                                </span>
-
-                                            )}
-
-                                        </td>
-
-
-                                        {/* PRINT */}
-
-                                        <td className="text-center">
-
-                                            <button
-                                                type="button"
-                                                className="bill-print-btn"
-                                                title="Print Bill"
-                                                onClick={() =>
-                                                    handlePrint(
-                                                        bill
-                                                    )
-                                                }
-                                            >
-
-                                                <Printer
-                                                    size={17}
-                                                />
-
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-                                ))
-
-                            )}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-
-                {/* =====================================
+      <div className="card bill-register-card">
+        <div className="card-header">
+          <div>
+            <h2>
+              {getMonthName(month)} {year}
+            </h2>
+
+            <p>Monthly bill register</p>
+          </div>
+        </div>
+
+        <div className="table-responsive">
+          <table className="data-table bill-register-table">
+            <thead>
+              <tr>
+                <th>Year</th>
+
+                <th>Month</th>
+
+                <th>House</th>
+
+                <th>Tenant</th>
+
+                <th>Unit</th>
+
+                <th className="text-right">Total</th>
+
+                <th className="text-right">Payment</th>
+
+                <th className="text-right">Due / Advance</th>
+
+                <th className="text-center">Adjust</th>
+
+                <th className="text-center">Print</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="10" className="text-center">
+                    Loading monthly bills...
+                  </td>
+                </tr>
+              ) : bills.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="text-center">
+                    No monthly bills found for this month.
+                  </td>
+                </tr>
+              ) : (
+                bills.map((bill) => (
+                  <tr key={bill.monthly_bill_id}>
+                    <td>{year}</td>
+
+                    <td>{getMonthName(month)}</td>
+
+                    <td>{bill.house_name}</td>
+
+                    <td>
+                      <strong>{bill.tenant_name}</strong>
+
+                      {bill.tenant_phone && (
+                        <div className="table-subtext">{bill.tenant_phone}</div>
+                      )}
+                    </td>
+
+                    <td>{bill.property_unit_name}</td>
+
+                    {/* TOTAL */}
+
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        className="table-link"
+                        onClick={() => handleTotalClick(bill)}
+                      >
+                        {formatMoney(bill.total_amount)}
+                      </button>
+                    </td>
+
+                    {/* PAYMENT */}
+
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        className="table-link"
+                        onClick={() => handlePaymentClick(bill)}
+                      >
+                        {formatMoney(bill.month_payment)}
+                      </button>
+                    </td>
+
+                    {/* DUE / ADVANCE */}
+
+                    <td className="text-right">
+                      {bill.balance_type === "due" && (
+                        <span className="balance-due">
+                          Due&nbsp;
+                          {formatMoney(bill.balance_amount)}
+                        </span>
+                      )}
+
+                      {bill.balance_type === "advance" && (
+                        <span className="balance-advance">
+                          Advance&nbsp;
+                          {formatMoney(bill.balance_amount)}
+                        </span>
+                      )}
+
+                      {bill.balance_type === "settled" && (
+                        <span className="balance-settled">Settled</span>
+                      )}
+                    </td>
+
+                    {/* ADJUST */}
+
+                    <td className="text-center">
+                      <button
+                        type="button"
+                        className="bill-adjust-btn"
+                        title="Adjust Bill"
+                        onClick={() => handleAdjustClick(bill)}
+                      >
+                        Adjust
+                      </button>
+                    </td>
+
+                    {/* PRINT */}
+
+                    <td className="text-center">
+                      <button
+                        type="button"
+                        className="bill-print-btn"
+                        title="Print Bill"
+                        onClick={() => handlePrint(bill)}
+                      >
+                        <Printer size={17} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* =====================================
                     SUMMARY
                 ===================================== */}
 
-                {!loading && bills.length > 0 && (
+        {!loading && bills.length > 0 && (
+          <div className="bill-register-summary">
+            <ReceiptText size={18} />
 
-                    <div className="bill-register-summary">
+            <span>
+              Total Bills: <strong>{bills.length}</strong>
+            </span>
+          </div>
+        )}
+      </div>
 
-                        <ReceiptText size={18} />
-
-                        <span>
-                            Total Bills:
-                            {' '}
-                            <strong>
-                                {bills.length}
-                            </strong>
-                        </span>
-
-                    </div>
-
-                )}
-
-            </div>
- 
-
-            {/* =========================================
+      {/* =========================================
                 BILL DETAILS MODAL
             ========================================= */}
 
-            {detailOpen && (
-
-                <div
-                    className="bill-modal-overlay"
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 99999,
-                        background: 'rgba(0, 0, 0, 0.55)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '20px',
-                    }}
-                    onMouseDown={closeDetailModal}
-                >
-
-                    <div
-                        className="bill-detail-modal"
-                        style={{
-                            width: '680px',
-                            maxWidth: '100%',
-                            maxHeight: '90vh',
-                            overflow: 'auto',
-                            background: '#ffffff',
-                            color: '#0f172a',
-                            borderRadius: '12px',
-                            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
-                        }}
-                        onMouseDown={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
-
-                        {/* HEADER */}
-
-                        <div className="bill-modal-header">
-
-                            <div>
-
-                                <h2>Monthly Bill Details</h2>
-
-                                {billDetail && (
-
-                                    <p>
-                                        {billDetail.billing_month}
-                                    </p>
-
-                                )}
-
-                            </div>
-
-
-                            <button
-                                type="button"
-                                className="bill-modal-close"
-                                onClick={closeDetailModal}
-                                aria-label="Close"
-                            >
-                                ×
-                            </button>
-
-                        </div>
-
-
-                        {/* BODY */}
-
-                        <div className="bill-modal-body">
-
-                            {detailLoading ? (
-
-                                <div className="bill-modal-message">
-                                    Loading bill details...
-                                </div>
-
-                            ) : detailError ? (
-
-                                <div className="alert alert-danger">
-                                    {detailError}
-                                </div>
-
-                            ) : billDetail ? (
-
-                                <>
-
-                                    {/* TENANT / PROPERTY */}
-
-                                    <div className="bill-info-grid">
-
-                                        <div>
-
-                                            <span className="bill-info-label">
-                                                Tenant
-                                            </span>
-
-                                            <strong>
-                                                {billDetail.tenant.name}
-                                            </strong>
-
-                                            <small>
-                                                {billDetail.tenant.phone || '-'}
-                                            </small>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span className="bill-info-label">
-                                                House
-                                            </span>
-
-                                            <strong>
-                                                {billDetail.house.name}
-                                            </strong>
-
-                                            <small>
-                                                {billDetail.house.address || '-'}
-                                            </small>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span className="bill-info-label">
-                                                Unit
-                                            </span>
-
-                                            <strong>
-                                                {billDetail.property_unit.name}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span className="bill-info-label">
-                                                Due Date
-                                            </span>
-
-                                            <strong>
-                                                {billDetail.due_date || '-'}
-                                            </strong>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    {/* CHARGE BREAKDOWN */}
-
-                                    <div className="bill-detail-section">
-
-                                        <h3>Charge Breakdown</h3>
-
-
-                                        <div className="bill-charge-table">
-
-                                            <div className="bill-charge-head">
-
-                                                <span>Billing Item</span>
-
-                                                <span>Amount</span>
-
-                                            </div>
-
-
-                                            {billDetail.items.map((item) => (
-
-                                                <div
-                                                    className="bill-charge-row"
-                                                    key={item.id}
-                                                >
-
-                                                    <span>
-                                                        {item.name}
-                                                    </span>
-
-                                                    <strong>
-                                                        {formatMoney(
-                                                            item.amount
-                                                        )}
-                                                    </strong>
-
-                                                </div>
-
-                                            ))}
-
-
-                                            <div className="bill-charge-total">
-
-                                                <span>
-                                                    Current Bill Total
-                                                </span>
-
-                                                <strong>
-                                                    {formatMoney(
-                                                        billDetail.total_amount
-                                                    )}
-                                                </strong>
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    {/* BALANCE SUMMARY */}
-
-                                    <div className="bill-detail-section">
-
-                                        <h3>Balance Summary</h3>
-
-
-                                        <div className="bill-balance-summary">
-
-                                            <div>
-
-                                                <span>
-                                                    Previous Balance
-                                                </span>
-
-                                                <strong>
-                                                    {formatMoney(
-                                                        billDetail.previous_balance
-                                                    )}
-                                                </strong>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <span>
-                                                    Current Bill
-                                                </span>
-
-                                                <strong>
-                                                    {formatMoney(
-                                                        billDetail.total_amount
-                                                    )}
-                                                </strong>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <span>
-                                                    Net Payment
-                                                </span>
-
-                                                <strong>
-                                                    {formatMoney(
-                                                        billDetail.month_payment
-                                                    )}
-                                                </strong>
-
-                                            </div>
-
-
-                                            <div className="bill-closing-balance">
-
-                                                <span>
-                                                    Closing Balance
-                                                </span>
-
-
-                                                {billDetail.balance_type ===
-                                                    'due' && (
-
-                                                    <strong className="balance-due">
-                                                        Due&nbsp;
-                                                        {formatMoney(
-                                                            billDetail.balance_amount
-                                                        )}
-                                                    </strong>
-
-                                                )}
-
-
-                                                {billDetail.balance_type ===
-                                                    'advance' && (
-
-                                                    <strong className="balance-advance">
-                                                        Advance&nbsp;
-                                                        {formatMoney(
-                                                            billDetail.balance_amount
-                                                        )}
-                                                    </strong>
-
-                                                )}
-
-
-                                                {billDetail.balance_type ===
-                                                    'settled' && (
-
-                                                    <strong className="balance-settled">
-                                                        Settled
-                                                    </strong>
-
-                                                )}
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                </>
-
-                            ) : null}
-
-                        </div>
-
-
-                        {/* FOOTER */}
-
-                        <div className="bill-modal-footer">
-
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={closeDetailModal}
-                            >
-                                Close
-                            </button>
-
-                        </div>
-
+      {detailOpen && (
+        <div
+          className="bill-modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(0, 0, 0, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onMouseDown={closeDetailModal}
+        >
+          <div
+            className="bill-detail-modal"
+            style={{
+              width: "680px",
+              maxWidth: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              background: "#ffffff",
+              color: "#0f172a",
+              borderRadius: "12px",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.25)",
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            {/* HEADER */}
+
+            <div className="bill-modal-header">
+              <div>
+                <h2>Monthly Bill Details</h2>
+
+                {billDetail && <p>{billDetail.billing_month}</p>}
+              </div>
+
+              <button
+                type="button"
+                className="bill-modal-close"
+                onClick={closeDetailModal}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* BODY */}
+
+            <div className="bill-modal-body">
+              {detailLoading ? (
+                <div className="bill-modal-message">
+                  Loading bill details...
+                </div>
+              ) : detailError ? (
+                <div className="alert alert-danger">{detailError}</div>
+              ) : billDetail ? (
+                <>
+                  {/* TENANT / PROPERTY */}
+
+                  <div className="bill-info-grid">
+                    <div>
+                      <span className="bill-info-label">Tenant</span>
+
+                      <strong>{billDetail.tenant.name}</strong>
+
+                      <small>{billDetail.tenant.phone || "-"}</small>
                     </div>
 
-                </div>
+                    <div>
+                      <span className="bill-info-label">House</span>
 
-            )}
+                      <strong>{billDetail.house.name}</strong>
 
- 
+                      <small>{billDetail.house.address || "-"}</small>
+                    </div>
 
+                    <div>
+                      <span className="bill-info-label">Unit</span>
 
+                      <strong>{billDetail.property_unit.name}</strong>
+                    </div>
 
-            {/* =========================================
+                    <div>
+                      <span className="bill-info-label">Due Date</span>
+
+                      <strong>{billDetail.due_date || "-"}</strong>
+                    </div>
+                  </div>
+
+                  {/* CHARGE BREAKDOWN */}
+
+                  <div className="bill-detail-section">
+                    <h3>Charge Breakdown</h3>
+
+                    <div className="bill-charge-table">
+                      <div className="bill-charge-head">
+                        <span>Billing Item</span>
+
+                        <span>Amount</span>
+                      </div>
+
+                      {billDetail.items.map((item) => (
+                        <div className="bill-charge-row" key={item.id}>
+                          <span>{item.name}</span>
+
+                          <strong>{formatMoney(item.amount)}</strong>
+                        </div>
+                      ))}
+
+                      <div className="bill-charge-total">
+                        <span>Current Bill Total</span>
+
+                        <strong>{formatMoney(billDetail.total_amount)}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BALANCE SUMMARY */}
+
+                  <div className="bill-detail-section">
+                    <h3>Balance Summary</h3>
+
+                    <div className="bill-balance-summary">
+                      <div>
+                        <span>Previous Balance</span>
+
+                        <strong>
+                          {formatMoney(billDetail.previous_balance)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Current Bill</span>
+
+                        <strong>{formatMoney(billDetail.total_amount)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Net Payment</span>
+
+                        <strong>{formatMoney(billDetail.month_payment)}</strong>
+                      </div>
+
+                      <div className="bill-closing-balance">
+                        <span>Closing Balance</span>
+
+                        {billDetail.balance_type === "due" && (
+                          <strong className="balance-due">
+                            Due&nbsp;
+                            {formatMoney(billDetail.balance_amount)}
+                          </strong>
+                        )}
+
+                        {billDetail.balance_type === "advance" && (
+                          <strong className="balance-advance">
+                            Advance&nbsp;
+                            {formatMoney(billDetail.balance_amount)}
+                          </strong>
+                        )}
+
+                        {billDetail.balance_type === "settled" && (
+                          <strong className="balance-settled">Settled</strong>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            {/* FOOTER */}
+
+            <div className="bill-modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={closeDetailModal}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================
+                ADJUST MONTHLY BILL MODAL
+            ========================================= */}
+
+      {adjustOpen && (
+        <div
+          className="bill-modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(0, 0, 0, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onMouseDown={closeAdjustModal}
+        >
+          <div
+            className="bill-detail-modal"
+            style={{
+              width: "680px",
+              maxWidth: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              background: "#ffffff",
+              color: "#0f172a",
+              borderRadius: "12px",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.25)",
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            {/* =====================================
+                            HEADER
+                        ===================================== */}
+
+            <div className="bill-modal-header">
+              <div>
+                <h2>Adjust Monthly Bill</h2>
+
+                {adjustBill && <p>{adjustBill.billing_month}</p>}
+              </div>
+
+              <button
+                type="button"
+                className="bill-modal-close"
+                onClick={closeAdjustModal}
+                disabled={adjustSaving}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* =====================================
+                            BODY
+                        ===================================== */}
+
+            <div className="bill-modal-body">
+              {adjustLoading ? (
+                <div className="bill-modal-message">Loading bill...</div>
+              ) : adjustError && !adjustBill ? (
+                <div className="alert alert-danger">{adjustError}</div>
+              ) : adjustBill ? (
+                <>
+                  {/* =========================
+                                        BILL INFORMATION
+                                    ========================= */}
+
+                  <div className="bill-info-grid">
+                    <div>
+                      <span className="bill-info-label">Tenant</span>
+
+                      <strong>{adjustBill.tenant?.name}</strong>
+                    </div>
+
+                    <div>
+                      <span className="bill-info-label">House</span>
+
+                      <strong>{adjustBill.house?.name}</strong>
+                    </div>
+
+                    <div>
+                      <span className="bill-info-label">Unit</span>
+
+                      <strong>{adjustBill.property_unit?.name}</strong>
+                    </div>
+
+                    <div>
+                      <span className="bill-info-label">Current Total</span>
+
+                      <strong>{formatMoney(adjustBill.total_amount)}</strong>
+                    </div>
+                  </div>
+
+                  {/* =========================
+                                        ADJUSTMENT FORM
+                                    ========================= */}
+
+                  <form onSubmit={handleAdjustSave}>
+                    {adjustError && (
+                      <div
+                        className="alert alert-danger"
+                        style={{
+                          marginTop: "16px",
+                        }}
+                      >
+                        {adjustError}
+                      </div>
+                    )}
+
+                    {/* =====================
+                                            BILL ITEMS
+                                        ===================== */}
+
+                    <div className="bill-detail-section">
+                      <h3>Bill Items</h3>
+
+                      <div className="adjust-bill-items">
+                        {adjustItems.map((item) => (
+                          <div className="adjust-bill-row" key={item.id}>
+                            <div>
+                              <strong>{item.name}</strong>
+
+                              <small>
+                                Previous: {formatMoney(item.original_amount)}
+                              </small>
+                            </div>
+
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.amount}
+                              onChange={(event) =>
+                                handleAdjustAmountChange(
+                                  item.billing_item_id,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="adjust-total">
+                        <span>New Total</span>
+
+                        <strong>{formatMoney(getAdjustedTotal())}</strong>
+                      </div>
+                    </div>
+
+                    {/* =====================
+                                            ADJUSTMENT REASON
+                                        ===================== */}
+
+                    <div className="payment-field">
+                      <label>Adjustment Reason</label>
+
+                      <textarea
+                        rows="3"
+                        maxLength="255"
+                        value={adjustReason}
+                        onChange={(event) =>
+                          setAdjustReason(event.target.value)
+                        }
+                        placeholder="Enter reason for this adjustment"
+                      />
+                    </div>
+
+                    {/* =====================
+                                            ACTION BUTTONS
+                                        ===================== */}
+
+                    <div
+                      className="payment-form-actions"
+                      style={{
+                        marginTop: "20px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={closeAdjustModal}
+                        disabled={adjustSaving}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={adjustSaving}
+                      >
+                        {adjustSaving ? "Saving..." : "Save Adjustment"}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* =========================
+                                        ADJUSTMENT HISTORY
+                                    ========================= */}
+
+                  <div className="bill-detail-section">
+                    <h3>Adjustment History</h3>
+
+                    {adjustmentHistory.length === 0 ? (
+                      <div className="adjustment-history-empty">
+                        No previous adjustments found.
+                      </div>
+                    ) : (
+                      <div className="adjustment-history-list">
+                        {adjustmentHistory.map((adjustment) => (
+                          <div
+                            className="adjustment-history-item"
+                            key={adjustment.id}
+                          >
+                            {/* HISTORY HEADER */}
+
+                            <div className="adjustment-history-header">
+                              <strong>{adjustment.billing_item_name}</strong>
+
+                              <span>
+                                {formatDateTime(adjustment.created_at)}
+                              </span>
+                            </div>
+
+                            {/* OLD -> NEW */}
+
+                            <div className="adjustment-history-change">
+                              <span>{formatMoney(adjustment.old_amount)}</span>
+
+                              <strong>→</strong>
+
+                              <span>{formatMoney(adjustment.new_amount)}</span>
+                            </div>
+
+                            {/* REASON */}
+
+                            <div className="adjustment-history-reason">
+                              <strong>Reason:</strong> {adjustment.reason}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================
                 PAYMENT MODAL
             ========================================= */}
 
-            {paymentOpen && selectedBill && (
-
-                <div
-                    className="payment-modal-overlay"
-                    onMouseDown={closePaymentModal}
-                >
-
-                    <div
-                        className="payment-modal"
-                        onMouseDown={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
-
-                        {/* HEADER */}
-
-                        <div className="payment-modal-header">
-
-                            <div>
-
-                                <h2>Payment</h2>
-
-                                <p>
-                                    {getMonthName(month)} {year}
-                                </p>
-
-                            </div>
-
-
-                            <button
-                                type="button"
-                                className="payment-modal-close"
-                                onClick={closePaymentModal}
-                            >
-                                ×
-                            </button>
-
-                        </div>
-
-
-                        <div className="payment-modal-body">
-
-                            {/* TENANT INFORMATION */}
-
-                            <div className="payment-info-grid">
-
-                                <div>
-                                    <span>House</span>
-
-                                    <strong>
-                                        {selectedBill.house_name}
-                                    </strong>
-                                </div>
-
-
-                                <div>
-                                    <span>Tenant</span>
-
-                                    <strong>
-                                        {selectedBill.tenant_name}
-                                    </strong>
-                                </div>
-
-
-                                <div>
-                                    <span>Unit</span>
-
-                                    <strong>
-                                        {selectedBill.property_unit_name}
-                                    </strong>
-                                </div>
-
-
-                                <div>
-                                    <span>
-                                        Balance
-                                    </span>
-
-                                    {selectedBill.balance_type === 'due' && (
-
-                                        <strong className="balance-due">
-                                            Due{' '}
-                                            {formatMoney(
-                                                selectedBill.balance_amount
-                                            )}
-                                        </strong>
-
-                                    )}
-
-
-                                    {selectedBill.balance_type === 'advance' && (
-
-                                        <strong className="balance-advance">
-                                            Advance{' '}
-                                            {formatMoney(
-                                                selectedBill.balance_amount
-                                            )}
-                                        </strong>
-
-                                    )}
-
-
-                                    {selectedBill.balance_type === 'settled' && (
-
-                                        <strong className="balance-settled">
-                                            Settled
-                                        </strong>
-
-                                    )}
-
-                                </div>
-
-                            </div>
-
-
-                            {/* MESSAGES */}
-
-                            {paymentError && (
-
-                                <div className="alert alert-danger">
-                                    {paymentError}
-                                </div>
-
-                            )}
-
-
-                            {paymentSuccess && (
-
-                                <div className="payment-success">
-                                    {paymentSuccess}
-                                </div>
-
-                            )}
-
-
-                            {/* PAYMENT FORM */}
-
-                            <form
-                                onSubmit={handlePaymentSave}
-                                className="payment-form"
-                            >
-
-                                <div className="payment-form-grid">
-
-                                    <div className="payment-field">
-
-                                        <label>
-                                            Payment Type
-                                        </label>
-
-                                        <select
-                                            name="payment_type"
-                                            value={
-                                                paymentForm.payment_type
-                                            }
-                                            onChange={
-                                                handlePaymentFormChange
-                                            }
-                                        >
-                                            <option value="add">
-                                                Add Payment
-                                            </option>
-
-                                            <option value="return">
-                                                Return
-                                            </option>
-
-                                        </select>
-
-                                    </div>
-
-
-                                    <div className="payment-field">
-
-                                        <label>
-                                            Amount
-                                        </label>
-
-                                        <input
-                                            type="number"
-                                            name="amount"
-                                            min="0.01"
-                                            step="0.01"
-                                            value={
-                                                paymentForm.amount
-                                            }
-                                            onChange={
-                                                handlePaymentFormChange
-                                            }
-                                            placeholder="0.00"
-                                        />
-
-                                    </div>
-
-
-                                    <div className="payment-field">
-
-                                        <label>
-                                            Payment Date
-                                        </label>
-
-                                        <input
-                                            type="datetime-local"
-                                            name="payment_date"
-                                            value={paymentForm.payment_date}
-                                            max={getMaxPaymentDateTime()}
-                                            onChange={handlePaymentFormChange}
-                                        />
-
-                                    </div>
-
-
-                                    <div className="payment-field">
-
-                                        <label>
-                                            Reference No.
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="reference_no"
-                                            value={
-                                                paymentForm.reference_no
-                                            }
-                                            onChange={
-                                                handlePaymentFormChange
-                                            }
-                                            placeholder="Optional"
-                                        />
-
-                                    </div>
-
-                                </div>
-
-
-                                <div className="payment-field">
-
-                                    <label>
-                                        Note
-                                    </label>
-
-                                    <textarea
-                                        name="note"
-                                        rows="2"
-                                        value={
-                                            paymentForm.note
-                                        }
-                                        onChange={
-                                            handlePaymentFormChange
-                                        }
-                                        placeholder="Optional note"
-                                    />
-                                </div>
-
-
-                                <div className="payment-form-actions">
-
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary"
-                                        onClick={closePaymentModal}
-                                        disabled={paymentSaving}
-                                    >
-                                        Cancel
-                                    </button>
-
-
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        disabled={paymentSaving}
-                                    >
-                                        {paymentSaving
-                                            ? 'Saving...'
-                                            : paymentForm.payment_type === 'return'
-                                                ? 'Save Return'
-                                                : 'Save Payment'}
-                                    </button>
-
-                                </div>
-
-                            </form>
-
-
-                            {/* PAYMENT HISTORY */}
-
-                            <div className="payment-history">
-
-                                <h3>
-                                    Payment History
-                                </h3>
-
-
-                                {paymentLoading ? (
-
-                                    <div className="payment-history-message">
-                                        Loading payment history...
-                                    </div>
-
-                                ) : paymentHistory.length === 0 ? (
-
-                                    <div className="payment-history-message">
-                                        No payment history found.
-                                    </div>
-
-                                ) : (
-
-                                    <div className="payment-history-table-wrap">
-
-                                        <table className="payment-history-table">
-
-                                            <thead>
-
-                                                <tr>
-
-                                                    <th>Date</th>
-                                                    <th>Type</th>
-
-                                                    <th className="text-right">
-                                                        Amount
-                                                    </th>
-
-                                                    <th>Reference</th>
-                                                    <th>Status</th>
-                                                    <th>Action</th>
-
-                                                </tr>
-
-                                            </thead>
-
-
-                                            <tbody>
-
-                                                {paymentHistory.map(
-                                                    (payment) => (
-
-                                                        <tr
-                                                            key={payment.id}
-                                                            className={
-                                                                payment.is_void
-                                                                    ? 'payment-void-row'
-                                                                    : ''
-                                                            }
-                                                        >
-
-                                                            <td>
-                                                                
-                                                                    {formatDateTime(payment.payment_date)}
-                                                                
-                                                            </td>
-
-
-                                                            <td>
-
-                                                                {payment.payment_type ===
-                                                                'add' ? (
-
-                                                                    <span className="payment-type-add">
-                                                                        ADD
-                                                                    </span>
-
-                                                                ) : (
-
-                                                                    <span className="payment-type-return">
-                                                                        RETURN
-                                                                    </span>
-
-                                                                )}
-
-                                                            </td>
-
-
-                                                            <td className="text-right">
-
-                                                                <strong>
-                                                                    {formatMoney(
-                                                                        payment.amount
-                                                                    )}
-                                                                </strong>
-
-                                                            </td>
-
-
-                                                            <td>
-                                                                {
-                                                                    payment.reference_no ||
-                                                                    '-'
-                                                                }
-                                                            </td>
-
-
-                                                            {/* STATUS */}
-
-                                                            <td>
-
-                                                                {payment.is_void ? (
-
-                                                                    <div>
-
-                                                                        <span className="payment-status-void">
-                                                                            VOID
-                                                                        </span>
-
-                                                                        {payment.void_reason && (
-
-                                                                            <div className="payment-void-reason">
-                                                                                {payment.void_reason}
-                                                                            </div>
-
-                                                                        )}
-
-                                                                    </div>
-
-                                                                ) : (
-
-                                                                    <span className="payment-status-active">
-                                                                        Active
-                                                                    </span>
-
-                                                                )}
-
-                                                            </td>
-
-
-                                                            {/* ACTION */}
-
-                                                            <td>
-
-                                                                {payment.is_void ? (
-
-                                                                    <span className="payment-void-text">
-                                                                        —
-                                                                    </span>
-
-                                                                ) : (
-
-                                                                    <button
-                                                                        type="button"
-                                                                        className="payment-void-btn"
-                                                                        disabled={
-                                                                            voidSaving &&
-                                                                            voidPaymentId === payment.id
-                                                                        }
-                                                                        onClick={() =>
-                                                                            handleVoidPayment(payment)
-                                                                        }
-                                                                    >
-
-                                                                        {voidSaving &&
-                                                                        voidPaymentId === payment.id
-                                                                            ? 'Voiding...'
-                                                                            : 'Void'
-                                                                        }
-
-                                                                    </button>
-
-                                                                )}
-
-                                                            </td>
-
-                                                        </tr>
-
-                                                    )
-                                                )}
-
-                                            </tbody>
-
-                                        </table>
-
-                                    </div>
-
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
+      {paymentOpen && selectedBill && (
+        <div className="payment-modal-overlay" onMouseDown={closePaymentModal}>
+          <div
+            className="payment-modal"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            {/* HEADER */}
+
+            <div className="payment-modal-header">
+              <div>
+                <h2>Payment</h2>
+
+                <p>
+                  {getMonthName(month)} {year}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="payment-modal-close"
+                onClick={closePaymentModal}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="payment-modal-body">
+              {/* TENANT INFORMATION */}
+
+              <div className="payment-info-grid">
+                <div>
+                  <span>House</span>
+
+                  <strong>{selectedBill.house_name}</strong>
                 </div>
 
-            )}
+                <div>
+                  <span>Tenant</span>
 
+                  <strong>{selectedBill.tenant_name}</strong>
+                </div>
+
+                <div>
+                  <span>Unit</span>
+
+                  <strong>{selectedBill.property_unit_name}</strong>
+                </div>
+
+                <div>
+                  <span>Balance</span>
+
+                  {selectedBill.balance_type === "due" && (
+                    <strong className="balance-due">
+                      Due {formatMoney(selectedBill.balance_amount)}
+                    </strong>
+                  )}
+
+                  {selectedBill.balance_type === "advance" && (
+                    <strong className="balance-advance">
+                      Advance {formatMoney(selectedBill.balance_amount)}
+                    </strong>
+                  )}
+
+                  {selectedBill.balance_type === "settled" && (
+                    <strong className="balance-settled">Settled</strong>
+                  )}
+                </div>
+              </div>
+
+              {/* CURRENT TENANCY LEDGER BALANCE */}
+
+              {tenancyBalance && (
+                <div className="payment-balance-summary">
+                  <div>
+                    <span>Total Billed</span>
+
+                    <strong>{formatMoney(tenancyBalance.total_billed)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Total Added</span>
+
+                    <strong>{formatMoney(tenancyBalance.total_added)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Total Returned</span>
+
+                    <strong>
+                      {formatMoney(tenancyBalance.total_returned)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Net Payment</span>
+
+                    <strong>{formatMoney(tenancyBalance.net_payment)}</strong>
+                  </div>
+
+                  <div className="payment-balance-total">
+                    <span>
+                      {tenancyBalance.balance_type === "advance"
+                        ? "Current Advance"
+                        : tenancyBalance.balance_type === "settled"
+                          ? "Current Balance"
+                          : "Current Due"}
+                    </span>
+
+                    <strong
+                      className={
+                        tenancyBalance.balance_type === "due"
+                          ? "balance-due"
+                          : tenancyBalance.balance_type === "advance"
+                            ? "balance-advance"
+                            : "balance-settled"
+                      }
+                    >
+                      {tenancyBalance.balance_type === "settled"
+                        ? "Settled"
+                        : formatMoney(tenancyBalance.display_amount)}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {/* MESSAGES */}
+
+              {paymentError && (
+                <div className="alert alert-danger">{paymentError}</div>
+              )}
+
+              {paymentSuccess && (
+                <div className="payment-success">{paymentSuccess}</div>
+              )}
+
+              {/* PAYMENT FORM */}
+
+              <form onSubmit={handlePaymentSave} className="payment-form">
+                <div className="payment-form-grid">
+                  <div className="payment-field">
+                    <label>Payment Type</label>
+
+                    <select
+                      name="payment_type"
+                      value={paymentForm.payment_type}
+                      onChange={handlePaymentFormChange}
+                    >
+                      <option value="add">Add Payment</option>
+
+                      <option value="return">Return</option>
+                    </select>
+                  </div>
+
+                  <div className="payment-field">
+                    <label>Amount</label>
+
+                    <input
+                      type="number"
+                      name="amount"
+                      min="0.01"
+                      step="0.01"
+                      value={paymentForm.amount}
+                      onChange={handlePaymentFormChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="payment-field">
+                    <label>Payment Date</label>
+
+                    <input
+                      type="datetime-local"
+                      name="payment_date"
+                      value={paymentForm.payment_date}
+                      max={getMaxPaymentDateTime()}
+                      onChange={handlePaymentFormChange}
+                    />
+                  </div>
+
+                  <div className="payment-field">
+                    <label>Reference No.</label>
+
+                    <input
+                      type="text"
+                      name="reference_no"
+                      value={paymentForm.reference_no}
+                      onChange={handlePaymentFormChange}
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+
+                <div className="payment-field">
+                  <label>Note</label>
+
+                  <textarea
+                    name="note"
+                    rows="2"
+                    value={paymentForm.note}
+                    onChange={handlePaymentFormChange}
+                    placeholder="Optional note"
+                  />
+                </div>
+
+                <div className="payment-form-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closePaymentModal}
+                    disabled={paymentSaving}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={paymentSaving}
+                  >
+                    {paymentSaving
+                      ? "Saving..."
+                      : paymentForm.payment_type === "return"
+                        ? "Save Return"
+                        : "Save Payment"}
+                  </button>
+                </div>
+              </form>
+
+              {/* PAYMENT HISTORY */}
+
+              <div className="payment-history">
+                <h3>Payment History</h3>
+
+                {paymentLoading ? (
+                  <div className="payment-history-message">
+                    Loading payment history...
+                  </div>
+                ) : paymentHistory.length === 0 ? (
+                  <div className="payment-history-message">
+                    No payment history found.
+                  </div>
+                ) : (
+                  <div className="payment-history-table-wrap">
+                    <table className="payment-history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Type</th>
+
+                          <th className="text-right">Amount</th>
+
+                          <th>Reference</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {paymentHistory.map((payment) => (
+                          <tr
+                            key={payment.id}
+                            className={
+                              payment.is_void ? "payment-void-row" : ""
+                            }
+                          >
+                            <td>{formatDateTime(payment.payment_date)}</td>
+
+                            <td>
+                              {payment.payment_type === "add" ? (
+                                <span className="payment-type-add">ADD</span>
+                              ) : (
+                                <span className="payment-type-return">
+                                  RETURN
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="text-right">
+                              <strong>{formatMoney(payment.amount)}</strong>
+                            </td>
+
+                            <td>{payment.reference_no || "-"}</td>
+
+                            {/* STATUS */}
+
+                            <td>
+                              {payment.is_void ? (
+                                <div>
+                                  <span className="payment-status-void">
+                                    VOID
+                                  </span>
+
+                                  {payment.void_reason && (
+                                    <div className="payment-void-reason">
+                                      {payment.void_reason}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="payment-status-active">
+                                  Active
+                                </span>
+                              )}
+                            </td>
+
+                            {/* ACTION */}
+
+                            <td>
+                              {payment.is_void ? (
+                                <span className="payment-void-text">—</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="payment-void-btn"
+                                  disabled={
+                                    voidSaving && voidPaymentId === payment.id
+                                  }
+                                  onClick={() => handleVoidPayment(payment)}
+                                >
+                                  {voidSaving && voidPaymentId === payment.id
+                                    ? "Voiding..."
+                                    : "Void"}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+      )}
 
-    );
+      {/* =========================================
+    PAYMENT VOID HISTORY MODAL
+========================================= */}
 
+      {voidHistoryOpen && (
+        <div
+          className="payment-modal-overlay"
+          onMouseDown={handleCloseVoidHistory}
+        >
+          <div
+            className="payment-modal void-history-modal"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="payment-modal-header">
+              <div>
+                <h2>Payment Void History</h2>
+                <p>Audit trail of cancelled payments</p>
+              </div>
+
+              <button
+                type="button"
+                className="payment-modal-close"
+                onClick={handleCloseVoidHistory}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="payment-modal-body">
+              {voidHistoryError && (
+                <div className="alert alert-danger">{voidHistoryError}</div>
+              )}
+
+              {voidHistoryLoading ? (
+                <div className="payment-history-message">
+                  Loading void history...
+                </div>
+              ) : !voidHistoryError && voidHistory.length === 0 ? (
+                <div className="payment-history-message">
+                  No void payments found.
+                </div>
+              ) : (
+                !voidHistoryError && (
+                  <>
+                    <p className="void-history-count">
+                      Total Void Payments: <strong>{voidHistory.length}</strong>
+                    </p>
+
+                    <div className="payment-history-table-wrap">
+                      <table className="payment-history-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Reference</th>
+                            <th>Tenant</th>
+                            <th>House / Unit</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Payment Date</th>
+                            <th>Void Date</th>
+                            <th>Void Reason</th>
+                            <th>Void By</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {voidHistory.map((payment) => (
+                            <tr key={payment.id}>
+                              <td>{payment.id}</td>
+
+                              <td>{payment.reference_no || "-"}</td>
+
+                              <td>{payment.tenant_name || "-"}</td>
+
+                              <td>
+                                {payment.house_name || "-"}
+                                <div className="table-subtext">
+                                  {payment.property_unit_name || "-"}
+                                </div>
+                              </td>
+
+                              <td>
+                                {payment.payment_type === "return"
+                                  ? "RETURN"
+                                  : "ADD"}
+                              </td>
+
+                              <td className="text-right">
+                                {formatMoney(payment.amount)}
+                              </td>
+
+                              <td>{formatDateTime(payment.payment_date)}</td>
+
+                              <td>{formatDateTime(payment.voided_at)}</td>
+
+                              <td>{payment.void_reason || "-"}</td>
+
+                              <td>
+                                {payment.voided_by_name || "Not recorded"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )
+              )}
+            </div>
+
+            <div className="bill-modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCloseVoidHistory}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-
 
 export default MonthlyBills;
