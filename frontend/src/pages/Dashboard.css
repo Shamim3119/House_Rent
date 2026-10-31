@@ -569,3 +569,23 @@
     transition: none;
   }
 }
+
+.dashboard-ledger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dashboard-ledger-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+}

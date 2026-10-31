@@ -168,21 +168,21 @@ const Dashboard = () => {
       value: money(financial.month_net_collection),
       icon: Wallet,
       currency: true,
-      path: `/reports?report=collection&month=${month}${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
+      path: `/reports?report=collection&month=${month}&auto=1${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
     },
     {
       label: "Outstanding Due",
       value: money(financial.outstanding_due),
       icon: AlertTriangle,
       currency: true,
-      path: `/reports?report=summary&balance=due&month=${month}${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
+      path: `/reports?report=summary&balance=due&month=${month}&auto=1${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
     },
     {
       label: "Tenant Advance",
       value: money(financial.tenant_advance),
       icon: TrendingUp,
       currency: true,
-      path: `/reports?report=summary&balance=advance&month=${month}${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
+      path: `/reports?report=summary&balance=advance&month=${month}&auto=1${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
     },
     {
       label: "Total Houses",
@@ -481,6 +481,7 @@ Net Collection: ৳ ${money(collected)}`}
                     <th>Unit</th>
                     <th>Phone</th>
                     <th className="amount">Due Amount</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
 
@@ -494,12 +495,25 @@ Net Collection: ৳ ${money(collected)}`}
                       <td className="amount dashboard-due">
                         ৳ {money(row.closing_balance)}
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="dashboard-ledger-button"
+                          onClick={() =>
+                            navigate(
+                              `/reports?report=ledger&tenancy_id=${encodeURIComponent(row.tenancy_id)}&month=${month}&auto=1${houseId ? `&house_id=${encodeURIComponent(houseId)}` : ""}`,
+                            )
+                          }
+                        >
+                          View Ledger <ArrowRight size={14} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
 
                   {outstanding.length === 0 && (
                     <tr>
-                      <td colSpan={5}>No outstanding tenancies found.</td>
+                      <td colSpan={6}>No outstanding tenancies found.</td>
                     </tr>
                   )}
                 </tbody>

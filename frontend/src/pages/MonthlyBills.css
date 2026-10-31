@@ -1,0 +1,1836 @@
+/* =====================================================
+
+   MONTHLY BILL PAGE
+
+===================================================== */
+
+.bill-filter-row {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 20px;
+
+  flex-wrap: wrap;
+
+  padding: 20px 24px;
+}
+
+/* =====================================================
+
+   FILTER FIELDS
+
+===================================================== */
+
+.bill-filter-row .form-group {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+
+  min-width: 180px;
+
+  margin: 0;
+}
+
+.bill-filter-row .form-group label {
+  display: block;
+
+  margin: 0;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: var(--text-secondary, #64748b);
+}
+
+.bill-filter-row .form-group select {
+  width: 100%;
+
+  height: 42px;
+
+  padding: 0 36px 0 12px;
+
+  border: 1px solid var(--border-color, #dbe2ea);
+
+  border-radius: 8px;
+
+  background-color: var(--card-bg, #ffffff);
+
+  color: var(--text-primary, #0f172a);
+
+  font-size: 14px;
+
+  font-family: inherit;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.bill-filter-row .form-group select:focus {
+  border-color: var(--primary-color, #2563eb);
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* =====================================================
+
+   FILTER BUTTONS
+
+===================================================== */
+
+.bill-filter-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 0;
+}
+
+.bill-filter-actions .btn {
+  min-height: 42px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  white-space: nowrap;
+}
+
+/* =====================================================
+
+   MONTHLY REGISTER CARD HEADER
+
+===================================================== */
+
+.bill-register-card .card-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 22px 24px;
+}
+
+.bill-register-card .card-header h2 {
+  margin: 0 0 6px;
+}
+
+.bill-register-card .card-header p {
+  margin: 0;
+}
+
+/* =====================================================
+
+   TABLE
+
+===================================================== */
+
+.bill-register-table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.bill-register-table th,
+.bill-register-table td {
+  padding: 15px 18px;
+
+  vertical-align: middle;
+}
+
+.bill-register-table th {
+  white-space: nowrap;
+}
+
+.bill-register-table td {
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* =====================================================
+
+   CLICKABLE MONEY VALUES
+
+===================================================== */
+
+.table-link {
+  border: 0;
+
+  padding: 2px 0;
+
+  margin: 0;
+
+  background: transparent;
+
+  color: var(--primary-color, #2563eb);
+
+  font: inherit;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  text-decoration: underline;
+
+  text-underline-offset: 3px;
+}
+
+.table-link:hover {
+  opacity: 0.75;
+}
+
+/* =====================================================
+
+   TENANT SECONDARY TEXT
+
+===================================================== */
+
+.table-subtext {
+  margin-top: 4px;
+
+  font-size: 12px;
+
+  font-weight: 400;
+
+  color: var(--text-secondary, #64748b);
+}
+
+/* =====================================================
+
+   ALIGNMENT
+
+===================================================== */
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* =====================================================
+
+   BALANCE
+
+===================================================== */
+
+.balance-due,
+.balance-advance,
+.balance-settled {
+  display: inline-block;
+
+  white-space: nowrap;
+
+  font-weight: 600;
+}
+
+.balance-due {
+  color: #dc2626;
+}
+
+.balance-advance {
+  color: #15803d;
+}
+
+.balance-settled {
+  color: #15803d;
+}
+
+/* =====================================================
+
+   PRINT BUTTON
+
+===================================================== */
+
+.bill-print-btn {
+  width: 36px;
+
+  height: 36px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid var(--border-color, #dbe2ea);
+
+  border-radius: 7px;
+
+  background: var(--card-bg, #ffffff);
+
+  color: var(--text-primary, #0f172a);
+
+  cursor: pointer;
+}
+
+.bill-print-btn:hover {
+  background: var(--hover-bg, #f1f5f9);
+}
+
+/* =====================================================
+
+   REGISTER FOOTER
+
+===================================================== */
+
+.bill-register-summary {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 16px 24px;
+
+  border-top: 1px solid var(--border-color, #e2e8f0);
+
+  font-size: 14px;
+}
+
+/* =====================================================
+
+   RESPONSIVE
+
+===================================================== */
+
+@media (max-width: 768px) {
+  .bill-filter-row {
+    align-items: stretch;
+
+    gap: 14px;
+
+    padding: 18px;
+  }
+
+  .bill-filter-row .form-group {
+    flex: 1 1 160px;
+
+    min-width: 0;
+  }
+
+  .bill-filter-actions {
+    width: 100%;
+  }
+
+  .bill-filter-actions .btn {
+    flex: 1;
+  }
+
+  .bill-register-table {
+    min-width: 950px;
+  }
+}
+
+/* =====================================================
+
+   MONTHLY BILL DETAILS MODAL
+
+===================================================== */
+
+.bill-modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.55);
+
+  backdrop-filter: blur(2px);
+}
+
+/* MODAL BOX */
+
+.bill-detail-modal {
+  width: 680px;
+
+  max-width: 100%;
+
+  max-height: calc(100vh - 40px);
+
+  display: flex;
+
+  flex-direction: column;
+
+  background: var(--card-bg, #ffffff);
+
+  color: var(--text-primary, #0f172a);
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.15),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  overflow: hidden;
+}
+
+/* =====================================================
+
+   HEADER
+
+===================================================== */
+
+.bill-modal-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px 24px;
+
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.bill-modal-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+
+  font-weight: 700;
+}
+
+.bill-modal-header p {
+  margin: 5px 0 0;
+
+  font-size: 13px;
+
+  color: var(--text-secondary, #64748b);
+}
+
+/* CLOSE BUTTON */
+
+.bill-modal-close {
+  width: 34px;
+
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: var(--text-secondary, #64748b);
+
+  font-size: 27px;
+
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.bill-modal-close:hover {
+  background: var(--hover-bg, #f1f5f9);
+}
+
+/* =====================================================
+
+   BODY
+
+===================================================== */
+
+.bill-modal-body {
+  flex: 1;
+
+  padding: 24px;
+
+  overflow-y: auto;
+}
+
+.bill-modal-message {
+  padding: 45px 10px;
+
+  text-align: center;
+
+  color: var(--text-secondary, #64748b);
+}
+
+/* =====================================================
+
+   TENANT / PROPERTY INFORMATION
+
+===================================================== */
+
+.bill-info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.bill-info-grid > div {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  padding: 14px;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 8px;
+
+  background: var(--card-bg, #ffffff);
+}
+
+.bill-info-label {
+  display: block;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+
+  color: var(--text-secondary, #64748b);
+}
+
+.bill-info-grid strong {
+  font-size: 14px;
+}
+
+.bill-info-grid small {
+  font-size: 12px;
+
+  color: var(--text-secondary, #64748b);
+}
+
+/* =====================================================
+
+   SECTIONS
+
+===================================================== */
+
+.bill-detail-section {
+  margin-top: 24px;
+}
+
+.bill-detail-section h3 {
+  margin: 0 0 10px;
+
+  font-size: 15px;
+
+  font-weight: 700;
+}
+
+/* =====================================================
+
+   CHARGE TABLE
+
+===================================================== */
+
+.bill-charge-table {
+  overflow: hidden;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 8px;
+}
+
+.bill-charge-head,
+.bill-charge-row,
+.bill-charge-total {
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr) 150px;
+
+  align-items: center;
+
+  gap: 20px;
+
+  padding: 12px 14px;
+}
+
+.bill-charge-head {
+  background: var(--hover-bg, #f8fafc);
+
+  color: var(--text-secondary, #64748b);
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.bill-charge-head span:last-child {
+  text-align: right;
+}
+
+.bill-charge-row {
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.bill-charge-row strong {
+  text-align: right;
+}
+
+.bill-charge-total {
+  border-top: 1px solid var(--border-color, #e2e8f0);
+
+  background: var(--hover-bg, #f8fafc);
+
+  font-weight: 700;
+}
+
+.bill-charge-total strong {
+  text-align: right;
+}
+
+/* =====================================================
+
+   BALANCE
+
+===================================================== */
+
+.bill-balance-summary {
+  overflow: hidden;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 8px;
+}
+
+.bill-balance-summary > div {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 12px 14px;
+
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.bill-balance-summary > div:last-child {
+  border-bottom: 0;
+}
+
+.bill-balance-summary strong {
+  text-align: right;
+}
+
+.bill-closing-balance {
+  background: var(--hover-bg, #f8fafc);
+
+  font-size: 15px;
+
+  font-weight: 600;
+}
+
+/* =====================================================
+
+   FOOTER
+
+===================================================== */
+
+.bill-modal-footer {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding: 15px 24px;
+
+  border-top: 1px solid var(--border-color, #e2e8f0);
+
+  background: var(--card-bg, #ffffff);
+}
+
+/* =====================================================
+
+   MOBILE
+
+===================================================== */
+
+@media (max-width: 600px) {
+  .bill-modal-overlay {
+    padding: 10px;
+  }
+
+  .bill-detail-modal {
+    max-height: calc(100vh - 20px);
+  }
+
+  .bill-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bill-modal-header {
+    padding: 16px 18px;
+  }
+
+  .bill-modal-body {
+    padding: 18px;
+  }
+
+  .bill-modal-footer {
+    padding: 14px 18px;
+  }
+
+  .bill-charge-head,
+  .bill-charge-row,
+  .bill-charge-total {
+    grid-template-columns: minmax(0, 1fr) 110px;
+  }
+}
+
+/* =====================================================
+
+   PAYMENT MODAL
+
+===================================================== */
+
+.payment-modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.58);
+
+  backdrop-filter: blur(2px);
+}
+
+.payment-modal {
+  width: 820px;
+
+  max-width: 100%;
+
+  max-height: calc(100vh - 40px);
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--card-bg, #ffffff);
+
+  color: var(--text-primary, #0f172a);
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 12px;
+
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+/* HEADER */
+
+.payment-modal-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  padding: 20px 24px;
+
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.payment-modal-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+}
+
+.payment-modal-header p {
+  margin: 5px 0 0;
+
+  font-size: 13px;
+
+  color: var(--text-secondary, #64748b);
+}
+
+.payment-modal-close {
+  width: 34px;
+
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: var(--text-secondary, #64748b);
+
+  font-size: 27px;
+
+  cursor: pointer;
+}
+
+.payment-modal-close:hover {
+  background: var(--hover-bg, #f1f5f9);
+}
+
+/* BODY */
+
+.payment-modal-body {
+  padding: 24px;
+
+  overflow-y: auto;
+}
+
+/* TENANT INFO */
+
+.payment-info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.payment-info-grid > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  padding: 13px;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 8px;
+}
+
+.payment-info-grid span:first-child {
+  font-size: 11px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  color: var(--text-secondary, #64748b);
+}
+
+.payment-info-grid strong {
+  font-size: 14px;
+}
+
+/* FORM */
+
+.payment-form {
+  margin-top: 20px;
+
+  padding: 18px;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 9px;
+}
+
+.payment-form-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 15px;
+}
+
+.payment-field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin-bottom: 15px;
+}
+
+.payment-field label {
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.payment-field input,
+.payment-field select,
+.payment-field textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 10px 12px;
+
+  border: 1px solid var(--border-color, #dbe2ea);
+
+  border-radius: 7px;
+
+  outline: none;
+
+  background: var(--card-bg, #ffffff);
+
+  color: var(--text-primary, #0f172a);
+
+  font: inherit;
+}
+
+.payment-field input,
+.payment-field select {
+  height: 42px;
+}
+
+.payment-field textarea {
+  resize: vertical;
+}
+
+.payment-field input:focus,
+.payment-field select:focus,
+.payment-field textarea:focus {
+  border-color: var(--primary-color, #2563eb);
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.payment-form-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+}
+
+/* SUCCESS */
+
+.payment-success {
+  margin: 14px 0;
+
+  padding: 11px 13px;
+
+  border-radius: 7px;
+
+  background: #ecfdf5;
+
+  color: #166534;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+/* HISTORY */
+
+.payment-history {
+  margin-top: 25px;
+}
+
+.payment-history h3 {
+  margin: 0 0 12px;
+
+  font-size: 16px;
+}
+
+.payment-history-table-wrap {
+  overflow-x: auto;
+
+  border: 1px solid var(--border-color, #e2e8f0);
+
+  border-radius: 8px;
+}
+
+.payment-history-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  font-size: 13px;
+}
+
+.payment-history-table th,
+.payment-history-table td {
+  padding: 11px 12px;
+
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+
+  text-align: left;
+
+  white-space: nowrap;
+}
+
+.payment-history-table th {
+  background: var(--hover-bg, #f8fafc);
+
+  color: var(--text-secondary, #64748b);
+
+  font-size: 11px;
+
+  text-transform: uppercase;
+}
+
+.payment-history-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.payment-history-message {
+  padding: 25px;
+
+  text-align: center;
+
+  color: var(--text-secondary, #64748b);
+}
+
+/* TYPES */
+
+.payment-type-add {
+  color: #15803d;
+
+  font-weight: 700;
+}
+
+.payment-type-return {
+  color: #b45309;
+
+  font-weight: 700;
+}
+
+.payment-status-active {
+  color: #15803d;
+
+  font-weight: 600;
+}
+
+.payment-status-void {
+  color: #dc2626;
+
+  font-weight: 700;
+}
+
+.payment-void-row {
+  opacity: 0.55;
+
+  text-decoration: line-through;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+  .payment-modal-overlay {
+    padding: 10px;
+  }
+
+  .payment-modal {
+    max-height: calc(100vh - 20px);
+  }
+
+  .payment-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-modal-body {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 450px) {
+  .payment-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.payment-void-btn {
+  border: 1px solid #dc2626;
+
+  background: transparent;
+
+  color: #dc2626;
+
+  border-radius: 6px;
+
+  padding: 5px 10px;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.payment-void-btn:hover:not(:disabled) {
+  background: #dc2626;
+
+  color: #ffffff;
+}
+
+.payment-void-btn:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+.payment-void-reason {
+  margin-top: 4px;
+
+  font-size: 11px;
+
+  line-height: 1.3;
+
+  opacity: 0.75;
+}
+
+.payment-void-text {
+  opacity: 0.5;
+}
+
+.bill-generation-result {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  align-items: center;
+
+  margin: 14px 0;
+
+  padding: 12px 14px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 8px;
+}
+
+.bill-generation-result span {
+  font-size: 13px;
+}
+
+/* =========================================
+
+   MONTHLY BILL ADJUSTMENT
+
+========================================= */
+
+.bill-adjust-btn {
+  border: 1px solid #d1d5db;
+
+  background: #ffffff;
+
+  padding: 6px 10px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.bill-adjust-btn:hover {
+  background: #f8fafc;
+}
+
+.adjust-bill-items {
+  border: 1px solid #e5e7eb;
+
+  border-radius: 8px;
+
+  overflow: hidden;
+}
+
+.adjust-bill-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 12px 14px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.adjust-bill-row:last-child {
+  border-bottom: 0;
+}
+
+.adjust-bill-row > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.adjust-bill-row small {
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.adjust-bill-row input {
+  width: 150px;
+
+  padding: 8px 10px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 6px;
+
+  text-align: right;
+}
+
+.adjust-total {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-top: 12px;
+
+  padding: 12px 14px;
+
+  background: #f8fafc;
+
+  border-radius: 8px;
+}
+
+.adjust-total strong {
+  font-size: 17px;
+}
+
+@media (max-width: 600px) {
+  .adjust-bill-row {
+    align-items: stretch;
+
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .adjust-bill-row input {
+    width: 100%;
+
+    text-align: left;
+  }
+}
+
+/* =========================================
+
+   BILL ADJUSTMENT HISTORY
+
+========================================= */
+
+.adjustment-history-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.adjustment-history-item {
+  padding: 12px 14px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+}
+
+.adjustment-history-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 8px;
+}
+
+.adjustment-history-header span {
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.adjustment-history-change {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 7px;
+
+  font-size: 14px;
+}
+
+.adjustment-history-reason {
+  color: #475569;
+
+  font-size: 13px;
+}
+
+.adjustment-history-empty {
+  padding: 14px;
+
+  border: 1px dashed #cbd5e1;
+
+  border-radius: 8px;
+
+  color: #64748b;
+
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .adjustment-history-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 4px;
+  }
+}
+
+/* =========================================================
+
+   PAYMENT - CURRENT LEDGER SUMMARY
+
+========================================================= */
+
+.payment-balance-summary {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-top: 16px;
+
+  margin-bottom: 20px;
+
+  padding: 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 10px;
+}
+
+/* Normal summary boxes */
+
+.payment-balance-summary > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  min-width: 0;
+
+  padding: 10px 12px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 8px;
+}
+
+.payment-balance-summary > div > span {
+  color: #64748b;
+
+  font-size: 12px;
+
+  font-weight: 500;
+}
+
+.payment-balance-summary > div > strong {
+  color: #0f172a;
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+
+   CURRENT DUE / ADVANCE
+
+========================================================= */
+
+.payment-balance-summary .payment-balance-total {
+  grid-column: 1 / -1;
+
+  display: flex;
+
+  flex-direction: row;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 13px 15px;
+
+  background: #f1f5f9;
+
+  border: 1px solid #cbd5e1;
+}
+
+.payment-balance-total > span {
+  font-size: 14px !important;
+
+  font-weight: 700 !important;
+
+  color: #334155 !important;
+}
+
+.payment-balance-total > strong {
+  font-size: 18px !important;
+}
+
+/* Keep existing balance meaning */
+
+.payment-balance-total .balance-due {
+  color: #dc2626;
+}
+
+.payment-balance-total .balance-advance {
+  color: #059669;
+}
+
+.payment-balance-total .balance-settled {
+  color: #059669;
+}
+
+/* =========================================================
+
+   TABLET
+
+========================================================= */
+
+@media (max-width: 800px) {
+  .payment-balance-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+
+   MOBILE
+
+========================================================= */
+
+@media (max-width: 520px) {
+  .payment-balance-summary {
+    grid-template-columns: 1fr;
+
+    padding: 10px;
+  }
+
+  .payment-balance-summary .payment-balance-total {
+    grid-column: auto;
+  }
+}
+
+/* =====================================================
+
+   HOUSE RENT - MONTHLY BILLS THEME FIX
+
+   Uses existing ThemeContext variables
+
+===================================================== */
+
+/* Map older Monthly Bills variables to application theme */
+
+:root {
+  --card-bg: var(--surface);
+
+  --border-color: var(--border);
+
+  --hover-bg: var(--surface-secondary);
+
+  --primary-color: var(--primary);
+}
+
+/* Year / Month dropdown */
+
+.bill-filter-row .form-group select {
+  background-color: var(--surface);
+
+  color: var(--text-primary);
+
+  border-color: var(--border);
+}
+
+.bill-filter-row .form-group select option {
+  background-color: var(--surface);
+
+  color: var(--text-primary);
+}
+
+/* Native dropdown theme */
+
+[data-theme="dark"] .bill-filter-row select {
+  color-scheme: dark;
+}
+
+/* Adjust button */
+
+.bill-adjust-btn {
+  background: var(--surface);
+
+  color: var(--text-primary);
+
+  border: 1px solid var(--border);
+}
+
+.bill-adjust-btn:hover {
+  background: var(--surface-secondary);
+
+  color: var(--primary);
+
+  border-color: var(--primary);
+}
+
+/* Print button */
+
+.bill-print-btn {
+  background: var(--surface);
+
+  color: var(--text-primary);
+
+  border-color: var(--border);
+}
+
+.bill-print-btn:hover {
+  background: var(--surface-secondary);
+
+  color: var(--primary);
+
+  border-color: var(--primary);
+}
+
+/* Ensure SVG icons inherit button color */
+
+.bill-print-btn svg {
+  color: inherit;
+
+  stroke: currentColor;
+}
+
+/* Monthly Bills modal */
+
+.bill-detail-modal,
+.payment-modal {
+  background: var(--surface);
+
+  color: var(--text-primary);
+
+  border-color: var(--border);
+}
+
+/* Adjustment form */
+
+.adjust-bill-row input {
+  background: var(--surface);
+
+  color: var(--text-primary);
+
+  border-color: var(--border);
+}
+
+.adjust-total,
+.adjustment-history-item,
+.payment-balance-summary {
+  background: var(--surface-secondary);
+
+  color: var(--text-primary);
+
+  border-color: var(--border);
+}
+
+/* Payment summary cards */
+
+.payment-balance-summary > div {
+  background: var(--surface);
+
+  border-color: var(--border);
+}
+
+.payment-balance-summary > div > strong {
+  color: var(--text-primary);
+}
+
+.payment-balance-summary .payment-balance-total {
+  background: var(--surface-secondary);
+
+  border-color: var(--border);
+}
+
+.payment-balance-total > span {
+  color: var(--text-primary) !important;
+}
+
+/* Adjustment history */
+
+.adjustment-history-item {
+  background: var(--surface-secondary);
+
+  border-color: var(--border);
+}
+
+.adjust-bill-items,
+.adjust-bill-row {
+  border-color: var(--border);
+}
+
+/* =========================================
+
+   PAYMENT VOID HISTORY
+
+========================================= */
+
+.void-history-modal {
+  width: min(1250px, 96vw);
+
+  max-width: 96vw;
+
+  max-height: 90vh;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+.void-history-modal .payment-modal-body {
+  overflow-y: auto;
+
+  min-height: 0;
+}
+
+.void-history-modal .payment-history-table-wrap {
+  width: 100%;
+
+  overflow-x: auto;
+}
+
+.void-history-modal .payment-history-table {
+  width: 100%;
+
+  min-width: 1100px;
+
+  border-collapse: collapse;
+}
+
+.void-history-modal .payment-history-table th,
+.void-history-modal .payment-history-table td {
+  padding: 12px;
+
+  vertical-align: top;
+
+  white-space: nowrap;
+}
+
+.void-history-modal .payment-history-table th {
+  font-weight: 600;
+}
+
+.void-history-modal .payment-history-table td:nth-child(9) {
+  white-space: normal;
+
+  min-width: 180px;
+
+  max-width: 260px;
+}
+
+.void-history-count {
+  margin-bottom: 16px;
+
+  font-size: 14px;
+}
+
+.void-history-count strong {
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .void-history-modal {
+    width: 98vw;
+
+    max-width: 98vw;
+
+    max-height: 94vh;
+  }
+}
+
+/* =========================================================
+   ADJUST MONTHLY BILL MODAL — LIGHT / DARK FIX
+   Also handles modals rendered through a React portal.
+========================================================= */
+.bill-modal-overlay {
+  --bill-modal-surface: #ffffff;
+  --bill-modal-soft: #f8fafc;
+  --bill-modal-text: #172033;
+  --bill-modal-muted: #64748b;
+  --bill-modal-border: #e5eaf0;
+  color-scheme: light;
+}
+
+/* Match app theme even when modal is outside the themed app node. */
+[data-theme="dark"] .bill-modal-overlay,
+.bill-modal-overlay[data-theme="dark"],
+:root[data-theme="dark"] .bill-modal-overlay,
+:root:has([data-theme="dark"]) .bill-modal-overlay {
+  --bill-modal-surface: #172033;
+  --bill-modal-soft: #1e293b;
+  --bill-modal-text: #f1f5f9;
+  --bill-modal-muted: #cbd5e1;
+  --bill-modal-border: #2b3950;
+  color-scheme: dark;
+}
+
+.bill-modal-overlay .bill-detail-modal,
+.bill-modal-overlay .bill-modal-header,
+.bill-modal-overlay .bill-modal-body,
+.bill-modal-overlay .bill-modal-footer {
+  background: var(--bill-modal-surface);
+  color: var(--bill-modal-text);
+  border-color: var(--bill-modal-border);
+}
+.bill-modal-overlay .bill-modal-header h2,
+.bill-modal-overlay .bill-detail-section h3,
+.bill-modal-overlay .bill-info-grid strong,
+.bill-modal-overlay .adjust-bill-row strong,
+.bill-modal-overlay .adjust-total,
+.bill-modal-overlay .adjust-total strong,
+.bill-modal-overlay .adjustment-history-header strong {
+  color: var(--bill-modal-text);
+}
+.bill-modal-overlay .bill-modal-header p,
+.bill-modal-overlay .bill-info-label,
+.bill-modal-overlay .bill-info-grid small,
+.bill-modal-overlay .adjust-bill-row small,
+.bill-modal-overlay .adjustment-history-header span,
+.bill-modal-overlay .adjustment-history-reason {
+  color: var(--bill-modal-muted);
+}
+.bill-modal-overlay .bill-info-grid > div,
+.bill-modal-overlay .adjust-bill-items,
+.bill-modal-overlay .adjust-bill-row,
+.bill-modal-overlay .bill-charge-table,
+.bill-modal-overlay .bill-charge-row,
+.bill-modal-overlay .bill-balance-summary {
+  background: var(--bill-modal-surface);
+  color: var(--bill-modal-text);
+  border-color: var(--bill-modal-border);
+}
+.bill-modal-overlay .adjust-total,
+.bill-modal-overlay .adjustment-history-item,
+.bill-modal-overlay .bill-charge-head,
+.bill-modal-overlay .bill-charge-total,
+.bill-modal-overlay .bill-closing-balance {
+  background: var(--bill-modal-soft);
+  color: var(--bill-modal-text);
+  border-color: var(--bill-modal-border);
+}
+.bill-modal-overlay .adjust-bill-row input,
+.bill-modal-overlay .bill-modal-body input,
+.bill-modal-overlay .bill-modal-body textarea,
+.bill-modal-overlay .bill-modal-body select {
+  background: var(--bill-modal-surface);
+  color: var(--bill-modal-text);
+  border: 1px solid var(--bill-modal-border);
+  color-scheme: inherit;
+}
+.bill-modal-overlay .bill-modal-body input::placeholder,
+.bill-modal-overlay .bill-modal-body textarea::placeholder {
+  color: var(--bill-modal-muted);
+  opacity: 0.85;
+}
+.bill-modal-overlay .bill-modal-close {
+  color: var(--bill-modal-muted);
+}
+.bill-modal-overlay .bill-modal-close:hover {
+  background: var(--bill-modal-soft);
+  color: var(--bill-modal-text);
+}
+.bill-modal-overlay .bill-modal-body label {
+  color: var(--bill-modal-text);
+}

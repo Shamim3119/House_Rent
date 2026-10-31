@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { createHash } = require("node:crypto");
 
 /* =========================================================
    GET ALL PAYMENTS
@@ -208,7 +209,23 @@ const createPayment = async (req, res) => {
       payment_date,
       reference_no,
       note,
+      idempotency_key,
     } = req.body;
+
+    // Optional for backward compatibility with older clients.
+    // New clients MUST send a UUID per logical save operation.
+    const key = idempotency_key == null ? null : String(idempotency_key).trim();
+    if (
+      key !== null &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        key,
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid idempotency key (UUID required).",
+      });
+    }
 
     /* ---------------------------------------------
            TENANCY
@@ -329,6 +346,47 @@ const createPayment = async (req, res) => {
      * Extra money becomes advance/credit.
      */
 
+    // Fingerprint protects against accidentally reusing a key with different data.
+    // Canonicalize the values the database actually stores.
+    const normalizedReference =
+      typeof reference_no === "string" ? reference_no.trim() || null : null;
+    const normalizedNote =
+      typeof note === "string" ? note.trim() || null : null;
+    const normalizedDate = String(payment_date).slice(0, 10);
+    const fingerprint = createHash("sha256")
+      .update(
+        JSON.stringify({
+          tenancy_id: tenancyId,
+          payment_type,
+          amount: paymentAmount.toFixed(2),
+          payment_date: normalizedDate,
+          reference_no: normalizedReference,
+          note: normalizedNote,
+        }),
+      )
+      .digest("hex");
+
+    if (key) {
+      const [existing] = await db.query(
+        "SELECT id, request_hash FROM payments WHERE idempotency_key = ? LIMIT 1",
+        [key],
+      );
+      if (existing.length) {
+        if (existing[0].request_hash !== fingerprint) {
+          return res.status(409).json({
+            success: false,
+            message: "Idempotency key already used for a different payment.",
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          message: "Payment was already saved. Existing transaction returned.",
+          data: { id: existing[0].id },
+        });
+      }
+    }
+
     /* ---------------------------------------------
            INSERT
         --------------------------------------------- */
@@ -341,17 +399,21 @@ const createPayment = async (req, res) => {
                 amount,
                 payment_date,
                 reference_no,
-                note
+                note,
+                idempotency_key,
+                request_hash
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
       [
         tenancyId,
         payment_type,
         paymentAmount,
         payment_date,
-        reference_no?.trim() || null,
-        note?.trim() || null,
+        normalizedReference,
+        normalizedNote,
+        key,
+        key ? fingerprint : null,
       ],
     );
 
@@ -366,6 +428,48 @@ const createPayment = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error?.code === "ER_DUP_ENTRY" && req.body?.idempotency_key) {
+      try {
+        const key = String(req.body.idempotency_key).trim();
+        const [existing] = await db.query(
+          "SELECT id, request_hash FROM payments WHERE idempotency_key = ? LIMIT 1",
+          [key],
+        );
+        if (existing.length) {
+          const b = req.body;
+          const fingerprint = createHash("sha256")
+            .update(
+              JSON.stringify({
+                tenancy_id: Number(b.tenancy_id),
+                payment_type: b.payment_type ?? "add",
+                amount: Number(b.amount).toFixed(2),
+                payment_date: String(b.payment_date).slice(0, 10),
+                reference_no:
+                  typeof b.reference_no === "string"
+                    ? b.reference_no.trim() || null
+                    : null,
+                note: typeof b.note === "string" ? b.note.trim() || null : null,
+              }),
+            )
+            .digest("hex");
+          if (existing[0].request_hash !== fingerprint) {
+            return res.status(409).json({
+              success: false,
+              message: "Idempotency key already used for a different payment.",
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            duplicate: true,
+            message:
+              "Payment was already saved. Existing transaction returned.",
+            data: { id: existing[0].id },
+          });
+        }
+      } catch (lookupError) {
+        console.error("Idempotency lookup error:", lookupError);
+      }
+    }
     console.error("Create payment error:", error);
 
     return res.status(500).json({

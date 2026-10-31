@@ -18,6 +18,7 @@ import Tenancies from "./pages/Tenancies";
 import TenancyCharges from "./pages/TenancyCharges";
 import MonthlyBills from "./pages/MonthlyBills";
 import Reports from "./pages/Reports";
+import Payments from "./pages/Payments";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
               <Route path="/tenancy-charges" element={<TenancyCharges />} />
               <Route path="/monthly-bills" element={<MonthlyBills />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/payments" element={<Payments />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

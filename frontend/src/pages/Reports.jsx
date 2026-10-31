@@ -101,7 +101,12 @@ const Reports = () => {
 
   const [tenantId, setTenantId] = useState("");
   const [unitId, setUnitId] = useState("");
-  const [tenancyId, setTenancyId] = useState("");
+  const requestedTenancyId = searchParams.get("tenancy_id") || "";
+  const [tenancyId, setTenancyId] = useState(
+    /^\d+$/.test(requestedTenancyId) && Number(requestedTenancyId) > 0
+      ? requestedTenancyId
+      : "",
+  );
 
   const [houses, setHouses] = useState([]);
   const [tenants, setTenants] = useState([]);

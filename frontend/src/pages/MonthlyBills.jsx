@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Eye, Printer, ReceiptText } from "lucide-react";
-
+import "./MonthlyBills.css";
 import api from "../api/axios";
 
 const MONTHS = [
@@ -79,6 +79,8 @@ function MonthlyBills() {
 
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const paymentSavingLock = useRef(false);
+  const paymentRequestIdentity = useRef(null);
   const [paymentError, setPaymentError] = useState("");
   const [paymentSuccess, setPaymentSuccess] = useState("");
 
@@ -104,7 +106,7 @@ function MonthlyBills() {
 
   const years = [];
 
-  for (let value = currentYear - 5; value <= currentYear + 2; value++) {
+  for (let value = currentYear; value <= currentYear; value++) {
     years.push(value);
   }
 
@@ -503,6 +505,7 @@ function MonthlyBills() {
   // -------------------------------------------------
 
   const handlePaymentClick = async (bill) => {
+    paymentRequestIdentity.current = null;
     setSelectedBill(bill);
     setPaymentOpen(true);
 
@@ -544,10 +547,11 @@ function MonthlyBills() {
   };
 
   const closePaymentModal = () => {
-    if (paymentSaving) {
+    if (paymentSavingLock.current || paymentSaving) {
       return;
     }
 
+    paymentRequestIdentity.current = null;
     setPaymentOpen(false);
     setSelectedBill(null);
     setPaymentHistory([]);
@@ -567,6 +571,8 @@ function MonthlyBills() {
 
   const handlePaymentSave = async (event) => {
     event.preventDefault();
+
+    if (paymentSavingLock.current) return;
 
     if (!selectedBill) {
       return;
@@ -598,6 +604,7 @@ function MonthlyBills() {
       return;
     }
 
+    paymentSavingLock.current = true;
     try {
       setPaymentSaving(true);
 
@@ -618,7 +625,36 @@ function MonthlyBills() {
         note: paymentForm.note,
       };
 
-      const response = await api.post("/payments", payload);
+      // Stable key for retries of the same payment; changed form gets a new key.
+      const signature = JSON.stringify({
+        tenancy_id: Number(payload.tenancy_id),
+        payment_type: payload.payment_type,
+        amount: Number(payload.amount).toFixed(2),
+        payment_date: payload.payment_date.slice(0, 10),
+        reference_no: String(payload.reference_no ?? "").trim(),
+        note: String(payload.note ?? "").trim(),
+      });
+      if (
+        !paymentRequestIdentity.current ||
+        paymentRequestIdentity.current.signature !== signature
+      ) {
+        paymentRequestIdentity.current = {
+          signature,
+          key: crypto.randomUUID(),
+        };
+      }
+      const response = await api.post("/payments", {
+        ...payload,
+        idempotency_key: paymentRequestIdentity.current.key,
+      });
+      // The server accepted the payment; reset identity and form BEFORE refreshing.
+      paymentRequestIdentity.current = null;
+      setPaymentForm((current) => ({
+        ...current,
+        amount: "",
+        reference_no: "",
+        note: "",
+      }));
 
       setPaymentSuccess(
         response.data?.message || "Payment saved successfully.",
@@ -640,16 +676,6 @@ function MonthlyBills() {
 
       setTenancyBalance(balanceResponse.data?.data || null);
 
-      // Clear only amount/reference/note.
-      // Keep type/date for convenience.
-
-      setPaymentForm((current) => ({
-        ...current,
-        amount: "",
-        reference_no: "",
-        note: "",
-      }));
-
       // Refresh monthly bill register
 
       await loadBills();
@@ -658,6 +684,7 @@ function MonthlyBills() {
 
       setPaymentError(err.response?.data?.message || "Failed to save payment.");
     } finally {
+      paymentSavingLock.current = false;
       setPaymentSaving(false);
     }
   };
